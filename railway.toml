@@ -1,0 +1,16 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "backend"
+source = "./backend"
+
+[services.variables]
+PORT = { default = "8080" }
+ENVIRONMENT = "production"
