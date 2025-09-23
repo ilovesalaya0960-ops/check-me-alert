@@ -32,8 +32,8 @@ NODE_ENV=production
 ## 📝 Netlify Site Settings
 
 ### Build Settings
-- **Build command:** `npm run build`
-- **Publish directory:** `frontend/.output/public`
+- **Build command:** `npm install && npm run build`
+- **Publish directory:** `.output/public`
 - **Base directory:** `frontend`
 
 ### Deploy Settings
@@ -73,8 +73,8 @@ vercel --prod
 
 ### 2. Configure Build Settings
 ```
-Build command: npm run build
-Publish directory: frontend/.output/public
+Build command: npm install && npm run build
+Publish directory: .output/public
 Base directory: frontend
 ```
 
