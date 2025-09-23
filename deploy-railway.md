@@ -14,12 +14,13 @@
 3. Push โค้ดขึ้น GitHub repository
 4. ใน Railway: New Project → Deploy from GitHub repo
 5. เลือก backend folder
-6. ตั้งค่า Environment Variables:
+6. ตั้งค่า :Environment Variables
    ```
    MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/phone_management?retryWrites=true&w=majority
    DB_NAME=phone_management
    PORT=8080
    ```
+  
 
 ### 3. Deploy Frontend บน Vercel
 1. สมัคร [Vercel.com](https://vercel.com)
