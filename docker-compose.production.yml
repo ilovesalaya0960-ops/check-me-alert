@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: phone-management-mongo-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: phone_management
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - phone-management-network
+    ports:
+      - "27017:27017"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.production
+    container_name: phone-management-backend-prod
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=mongodb://admin:${MONGO_ROOT_PASSWORD}@mongodb:27017/phone_management?authSource=admin
+      - DB_NAME=phone_management
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - PORT=8080
+      - GO_ENV=production
+    depends_on:
+      - mongodb
+    networks:
+      - phone-management-network
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+    container_name: phone-management-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NUXT_PUBLIC_API_BASE=https://api.${DOMAIN}/api/v1
+      - NUXT_PUBLIC_DOMAIN=${DOMAIN}
+      - NUXT_PUBLIC_SITE_URL=https://${DOMAIN}
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - phone-management-network
+    ports:
+      - "3000:3000"
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: phone-management-nginx-prod
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - phone-management-network
+    ports:
+      - "80:80"
+      - "443:443"
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  phone-management-network:
+    driver: bridge

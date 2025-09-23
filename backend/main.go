@@ -4,6 +4,7 @@ import (
     "log"
     "mobile-shop-backend/database"
     "mobile-shop-backend/handlers"
+    "mobile-shop-backend/scheduler"
 
     "github.com/gofiber/fiber/v2"
     "github.com/gofiber/fiber/v2/middleware/logger"
@@ -18,6 +19,10 @@ func main() {
 
     // Connect to MongoDB
     database.Connect()
+
+    // Start notification scheduler
+    // scheduler.StartTestNotificationScheduler() // ใช้สำหรับทดสอบ (ทุก 5 นาที)
+    scheduler.StartDailyNotificationScheduler() // ใช้สำหรับการทำงานจริง (ทุกวัน 00:10)
 
     // Create Fiber app
     app := fiber.New(fiber.Config{
@@ -34,9 +39,17 @@ func main() {
 
     // Middleware
     app.Use(func(c *fiber.Ctx) error {
-        c.Set("Access-Control-Allow-Origin", "*")
+        // CORS middleware with environment-aware origins
+        allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+        if allowedOrigins == "" {
+            // Default for development and fallback
+            allowedOrigins = "*"
+        }
+
+        c.Set("Access-Control-Allow-Origin", allowedOrigins)
         c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-        c.Set("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization")
+        c.Set("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID")
+        c.Set("Access-Control-Allow-Credentials", "true")
 
         if c.Method() == "OPTIONS" {
             return c.SendStatus(204)
@@ -68,17 +81,24 @@ func main() {
     phoneNumbers.Put("/:id", handlers.UpdatePhoneNumber)
     phoneNumbers.Delete("/:id", handlers.DeletePhoneNumber)
 
-    // Notification routes
-    notifications := api.Group("/notifications")
-    notifications.Get("/telegram/settings", handlers.GetTelegramSettings)
-    notifications.Put("/telegram/settings", handlers.UpdateTelegramSettings)
-    notifications.Post("/telegram/test", handlers.TestTelegramConnection)
-    notifications.Post("/telegram/send/:id", handlers.SendExpiryNotification)
-    notifications.Post("/telegram/daily-report", handlers.SendDailyReport)
-    notifications.Get("/logs", handlers.GetNotificationLogs)
+    // Telegram routes
+    telegram := api.Group("/telegram")
+    telegram.Get("/bot-info", handlers.GetTelegramBotInfo)
+    telegram.Get("/updates", handlers.GetTelegramUpdates)
+    telegram.Post("/test", handlers.SendTelegramTest)
+    telegram.Post("/notify-expiry", handlers.SendExpiryNotifications)
 
     // Start server
-    port := ":8080"
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+    // Ensure port has colon prefix
+    if port[0] != ':' {
+        port = ":" + port
+    }
+
     log.Printf("Server starting on port %s", port)
     log.Fatal(app.Listen(port))
 }

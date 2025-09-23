@@ -76,7 +76,7 @@
             </NuxtLink>
 
             <NuxtLink
-              to="/settings/telegram"
+              to="/telegram"
               class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
             >
               <div class="p-6">

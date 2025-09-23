@@ -1,0 +1,89 @@
+[build]
+  # Directory to change to before starting a build
+  base = "frontend/"
+
+  # Directory that contains the deploy-ready HTML files and assets
+  publish = "frontend/.output/public"
+
+  # Default build command
+  command = "npm run build"
+
+[build.environment]
+  # Node.js version for build
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+# Headers for security and performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, Content-Type, Accept, Authorization"
+
+# Cache static assets
+[[headers]]
+  for = "/_nuxt/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# Redirects for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API proxy to backend (if needed)
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-backend-api.herokuapp.com/api/:splat"
+#   status = 200
+#   force = true
+
+# Custom domain redirects
+[[redirects]]
+  from = "https://phonemanagement.netlify.app/*"
+  to = "https://yourdomain.com/:splat"
+  status = 301
+  force = true
+
+# Environment-specific settings
+[context.production]
+  command = "npm run build"
+  [context.production.environment]
+    NODE_ENV = "production"
+
+[context.deploy-preview]
+  command = "npm run build"
+  [context.deploy-preview.environment]
+    NODE_ENV = "development"
+
+[context.branch-deploy]
+  command = "npm run build"
+
+# Functions configuration (if using Netlify Functions)
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Form handling
+[forms]
+  spam_protection = true
+
+# Large Media (Git LFS)
+[large_media]
+  enabled = false
