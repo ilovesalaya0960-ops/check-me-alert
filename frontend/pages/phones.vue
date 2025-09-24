@@ -41,6 +41,14 @@
               </select>
             </div>
             <div class="form-group">
+              <label>หมวดหมู่ใช้งาน</label>
+              <input
+                v-model="newPhone.usageCategory"
+                type="text"
+                placeholder="เช่น งาน, ส่วนตัว, ธุรกิจ"
+              />
+            </div>
+            <div class="form-group">
               <label>แพ็กเกจ</label>
               <input
                 v-model="newPhone.package"
@@ -126,6 +134,7 @@
               <tr>
                 <th>เบอร์โทรศัพท์</th>
                 <th>ค่าย</th>
+                <th>หมวดหมู่ใช้งาน</th>
                 <th>แพ็กเกจ</th>
                 <th>ค่าใช้จ่าย/เดือน</th>
                 <th>วันที่สมัครโปร</th>
@@ -145,6 +154,12 @@
                   <span class="network-badge" :class="phone.network.toLowerCase()">
                     {{ phone.network }}
                   </span>
+                </td>
+                <td class="usage-category">
+                  <span v-if="phone.usageCategory" class="category-tag">
+                    {{ phone.usageCategory }}
+                  </span>
+                  <span v-else class="no-category">-</span>
                 </td>
                 <td class="package">
                   {{ phone.package || '-' }}
@@ -233,6 +248,14 @@
               </select>
             </div>
             <div class="form-group">
+              <label>หมวดหมู่ใช้งาน</label>
+              <input
+                v-model="editingPhone.usageCategory"
+                type="text"
+                placeholder="เช่น งาน, ส่วนตัว, ธุรกิจ"
+              />
+            </div>
+            <div class="form-group">
               <label>แพ็กเกจ</label>
               <input
                 v-model="editingPhone.package"
@@ -308,6 +331,7 @@ const phones = ref([])
 const newPhone = ref({
   number: '',
   network: '',
+  usageCategory: '',
   package: '',
   monthlyCost: '',
   packageStartDate: '',
@@ -339,6 +363,7 @@ const loadPhones = () => {
         id: 1,
         number: '081-234-5678',
         network: 'AIS',
+        usageCategory: 'งาน',
         package: 'เน็ตไม่อั้น 30 วัน',
         monthlyCost: 199,
         packageStartDate: '2024-01-15',
@@ -351,6 +376,7 @@ const loadPhones = () => {
         id: 2,
         number: '082-345-6789',
         network: 'DTAC',
+        usageCategory: 'ส่วนตัว',
         package: 'โทรไม่อั้น',
         monthlyCost: 299,
         packageStartDate: '2023-12-28',
@@ -363,6 +389,7 @@ const loadPhones = () => {
         id: 3,
         number: '083-456-7890',
         network: 'TRUE',
+        usageCategory: 'ธุรกิจ',
         package: 'เน็ต 10GB',
         monthlyCost: 159,
         packageStartDate: '2023-12-20',
@@ -399,6 +426,7 @@ const addPhone = () => {
   newPhone.value = {
     number: '',
     network: '',
+    usageCategory: '',
     package: '',
     monthlyCost: '',
     packageStartDate: '',
@@ -775,6 +803,25 @@ useHead({
   color: #ff9800;
 }
 
+.category-tag {
+  background: #f8f9fa;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid #dee2e6;
+}
+
+.no-category {
+  color: #bdc3c7;
+  font-style: italic;
+}
+
+.usage-category {
+  max-width: 120px;
+}
+
 .package {
   color: #5a6c7d;
   max-width: 150px;
@@ -1052,7 +1099,7 @@ useHead({
   }
 
   .phone-table table {
-    min-width: 1200px;
+    min-width: 1300px;
   }
 
   .phone-table th,
