@@ -122,7 +122,9 @@ const loadPhones = () => {
         network: 'AIS',
         package: 'เน็ตไม่อั้น 30 วัน',
         monthlyCost: 199,
-        expiryDate: '2024-02-15',
+        packageStartDate: '2024-01-15',
+        packageExpiryDate: '2024-02-14',
+        simExpiryDate: '2025-01-15',
         status: 'active',
         notes: 'เบอร์หลัก',
         createdAt: new Date().toISOString()
@@ -133,7 +135,9 @@ const loadPhones = () => {
         network: 'DTAC',
         package: 'โทรไม่อั้น',
         monthlyCost: 299,
-        expiryDate: '2024-01-28',
+        packageStartDate: '2023-12-28',
+        packageExpiryDate: '2024-01-27',
+        simExpiryDate: '2024-12-28',
         status: 'active',
         notes: 'เบอร์สำรอง',
         createdAt: new Date(Date.now() - 86400000).toISOString() // Yesterday
@@ -144,7 +148,9 @@ const loadPhones = () => {
         network: 'TRUE',
         package: 'เน็ต 10GB',
         monthlyCost: 159,
-        expiryDate: '2024-01-20',
+        packageStartDate: '2023-12-20',
+        packageExpiryDate: '2024-01-19',
+        simExpiryDate: '2023-12-20',
         status: 'expired',
         notes: 'ไม่ได้ใช้แล้ว',
         createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
@@ -166,8 +172,16 @@ const expiringPhones = computed(() => {
   const today = new Date()
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   return phones.value.filter(phone => {
-    const expiryDate = new Date(phone.expiryDate)
-    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+    if (phone.status !== 'active') return false
+
+    // Check both package expiry and SIM expiry
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
+
+    return packageExpiring || simExpiring
   }).length
 })
 
@@ -202,19 +216,43 @@ const recentActivities = computed(() => {
   const today = new Date()
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   const expiringList = phones.value.filter(phone => {
-    const expiryDate = new Date(phone.expiryDate)
-    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+    if (phone.status !== 'active') return false
+
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
+
+    return packageExpiring || simExpiring
   })
 
   expiringList.forEach(phone => {
-    const daysLeft = Math.ceil((new Date(phone.expiryDate) - today) / (1000 * 60 * 60 * 24))
-    activities.push({
-      id: `expiry_${phone.id}`,
-      icon: '🔔',
-      title: 'แจ้งเตือนหมดอายุ',
-      description: `${phone.number} (${phone.network}) จะหมดอายุในอีก ${daysLeft} วัน`,
-      time: 'เมื่อสักครู่'
-    })
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    // Check which one is expiring sooner
+    if (packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today) {
+      const daysLeft = Math.ceil((packageExpiry - today) / (1000 * 60 * 60 * 24))
+      activities.push({
+        id: `package_expiry_${phone.id}`,
+        icon: '📦',
+        title: 'โปรใกล้หมดอายุ',
+        description: `${phone.number} (${phone.network}) โปรจะหมดอายุในอีก ${daysLeft} วัน`,
+        time: 'เมื่อสักครู่'
+      })
+    }
+
+    if (simExpiry && simExpiry <= nextWeek && simExpiry >= today) {
+      const daysLeft = Math.ceil((simExpiry - today) / (1000 * 60 * 60 * 24))
+      activities.push({
+        id: `sim_expiry_${phone.id}`,
+        icon: '🔔',
+        title: 'ซิมใกล้หมดอายุ',
+        description: `${phone.number} (${phone.network}) ซิมจะหมดอายุในอีก ${daysLeft} วัน`,
+        time: 'เมื่อสักครู่'
+      })
+    }
   })
 
   // Add cost summary if there are active phones

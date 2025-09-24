@@ -57,9 +57,23 @@
               />
             </div>
             <div class="form-group">
-              <label>วันที่หมดอายุ</label>
+              <label>วันที่สมัครโปร</label>
               <input
-                v-model="newPhone.expiryDate"
+                v-model="newPhone.packageStartDate"
+                type="date"
+              />
+            </div>
+            <div class="form-group">
+              <label>วันที่โปรหมดอายุ</label>
+              <input
+                v-model="newPhone.packageExpiryDate"
+                type="date"
+              />
+            </div>
+            <div class="form-group">
+              <label>วันที่ซิมหมดอายุ</label>
+              <input
+                v-model="newPhone.simExpiryDate"
                 type="date"
                 required
               />
@@ -114,7 +128,9 @@
                 <th>ค่าย</th>
                 <th>แพ็กเกจ</th>
                 <th>ค่าใช้จ่าย/เดือน</th>
-                <th>วันหมดอายุ</th>
+                <th>วันที่สมัครโปร</th>
+                <th>วันที่โปรหมดอายุ</th>
+                <th>วันที่ซิมหมดอายุ</th>
                 <th>สถานะ</th>
                 <th>หมายเหตุ</th>
                 <th>การจัดการ</th>
@@ -139,9 +155,21 @@
                   </span>
                   <span v-else class="no-cost">-</span>
                 </td>
-                <td class="expiry">
-                  <span :class="getExpiryClass(phone.expiryDate, phone.status)">
-                    {{ formatDate(phone.expiryDate) }}
+                <td class="package-start">
+                  <span v-if="phone.packageStartDate">
+                    {{ formatDate(phone.packageStartDate) }}
+                  </span>
+                  <span v-else class="no-date">-</span>
+                </td>
+                <td class="package-expiry">
+                  <span v-if="phone.packageExpiryDate" :class="getPackageExpiryClass(phone.packageExpiryDate, phone.status)">
+                    {{ formatDate(phone.packageExpiryDate) }}
+                  </span>
+                  <span v-else class="no-date">-</span>
+                </td>
+                <td class="sim-expiry">
+                  <span :class="getSimExpiryClass(phone.simExpiryDate, phone.status)">
+                    {{ formatDate(phone.simExpiryDate) }}
                   </span>
                 </td>
                 <td class="status">
@@ -221,9 +249,23 @@
               />
             </div>
             <div class="form-group">
-              <label>วันที่หมดอายุ</label>
+              <label>วันที่สมัครโปร</label>
               <input
-                v-model="editingPhone.expiryDate"
+                v-model="editingPhone.packageStartDate"
+                type="date"
+              />
+            </div>
+            <div class="form-group">
+              <label>วันที่โปรหมดอายุ</label>
+              <input
+                v-model="editingPhone.packageExpiryDate"
+                type="date"
+              />
+            </div>
+            <div class="form-group">
+              <label>วันที่ซิมหมดอายุ</label>
+              <input
+                v-model="editingPhone.simExpiryDate"
                 type="date"
                 required
               />
@@ -268,7 +310,9 @@ const newPhone = ref({
   network: '',
   package: '',
   monthlyCost: '',
-  expiryDate: '',
+  packageStartDate: '',
+  packageExpiryDate: '',
+  simExpiryDate: '',
   status: 'active',
   notes: ''
 })
@@ -297,7 +341,9 @@ const loadPhones = () => {
         network: 'AIS',
         package: 'เน็ตไม่อั้น 30 วัน',
         monthlyCost: 199,
-        expiryDate: '2024-02-15',
+        packageStartDate: '2024-01-15',
+        packageExpiryDate: '2024-02-14',
+        simExpiryDate: '2025-01-15',
         status: 'active',
         notes: 'เบอร์หลัก'
       },
@@ -307,7 +353,9 @@ const loadPhones = () => {
         network: 'DTAC',
         package: 'โทรไม่อั้น',
         monthlyCost: 299,
-        expiryDate: '2024-01-28',
+        packageStartDate: '2023-12-28',
+        packageExpiryDate: '2024-01-27',
+        simExpiryDate: '2024-12-28',
         status: 'active',
         notes: 'เบอร์สำรอง'
       },
@@ -317,7 +365,9 @@ const loadPhones = () => {
         network: 'TRUE',
         package: 'เน็ต 10GB',
         monthlyCost: 159,
-        expiryDate: '2024-01-20',
+        packageStartDate: '2023-12-20',
+        packageExpiryDate: '2024-01-19',
+        simExpiryDate: '2023-12-20',
         status: 'expired',
         notes: 'ไม่ได้ใช้แล้ว'
       }
@@ -331,7 +381,7 @@ const savePhones = () => {
 }
 
 const addPhone = () => {
-  if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.expiryDate) {
+  if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
@@ -351,7 +401,9 @@ const addPhone = () => {
     network: '',
     package: '',
     monthlyCost: '',
-    expiryDate: '',
+    packageStartDate: '',
+    packageExpiryDate: '',
+    simExpiryDate: '',
     status: 'active',
     notes: ''
   }
@@ -365,7 +417,7 @@ const editPhone = (phone) => {
 }
 
 const updatePhone = () => {
-  if (!editingPhone.value.number || !editingPhone.value.network || !editingPhone.value.expiryDate) {
+  if (!editingPhone.value.number || !editingPhone.value.network || !editingPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
@@ -402,10 +454,16 @@ const filteredPhones = computed(() => {
   if (filterStatus.value !== 'all') {
     if (filterStatus.value === 'expiring') {
       const today = new Date()
-      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
       result = result.filter(phone => {
-        const expiryDate = new Date(phone.expiryDate)
-        return expiryDate <= nextWeek && expiryDate >= today
+        // Check both package expiry and SIM expiry
+        const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+        const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+        const packageExpiring = packageExpiry && packageExpiry <= nextMonth && packageExpiry >= today
+        const simExpiring = simExpiry && simExpiry <= nextMonth && simExpiry >= today
+
+        return (packageExpiring || simExpiring) && phone.status === 'active'
       })
     } else {
       result = result.filter(phone => phone.status === filterStatus.value)
@@ -444,7 +502,7 @@ const formatDate = (dateString) => {
   })
 }
 
-const getExpiryClass = (expiryDate, status) => {
+const getPackageExpiryClass = (expiryDate, status) => {
   if (!expiryDate || status !== 'active') return ''
 
   const today = new Date()
@@ -453,8 +511,22 @@ const getExpiryClass = (expiryDate, status) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
   if (diffDays < 0) return 'expired-date'
-  if (diffDays <= 7) return 'expiring-soon'
-  if (diffDays <= 30) return 'expiring-month'
+  if (diffDays <= 3) return 'expiring-soon'
+  if (diffDays <= 7) return 'expiring-month'
+  return 'normal-date'
+}
+
+const getSimExpiryClass = (expiryDate, status) => {
+  if (!expiryDate) return ''
+
+  const today = new Date()
+  const expiry = new Date(expiryDate)
+  const diffTime = expiry - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'expired-date'
+  if (diffDays <= 30) return 'expiring-soon'
+  if (diffDays <= 90) return 'expiring-month'
   return 'normal-date'
 }
 
@@ -713,9 +785,14 @@ useHead({
   font-weight: 600;
 }
 
-.no-cost, .no-notes {
+.no-cost, .no-notes, .no-date {
   color: #bdc3c7;
   font-style: italic;
+}
+
+.package-start, .package-expiry, .sim-expiry {
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .expiry {
@@ -975,7 +1052,7 @@ useHead({
   }
 
   .phone-table table {
-    min-width: 800px;
+    min-width: 1200px;
   }
 
   .phone-table th,
