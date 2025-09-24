@@ -63,17 +63,17 @@
 
 # Environment-specific settings
 [context.production]
-  command = "npm install && npm run build"
+  command = "npm ci && ./node_modules/.bin/nuxt build"
   [context.production.environment]
     NODE_ENV = "production"
 
 [context.deploy-preview]
-  command = "npm install && npm run build"
+  command = "npm ci && ./node_modules/.bin/nuxt build"
   [context.deploy-preview.environment]
     NODE_ENV = "development"
 
 [context.branch-deploy]
-  command = "npm install && npm run build"
+  command = "npm ci && ./node_modules/.bin/nuxt build"
 
 # Functions configuration (if using Netlify Functions)
 [functions]
