@@ -2,11 +2,11 @@
   "name": "phone-number-management-frontend",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
-    "start": "nuxt start"
+    "build": "npx nuxt build",
+    "dev": "npx nuxt dev",
+    "generate": "npx nuxt generate",
+    "preview": "npx nuxt preview",
+    "start": "npx nuxt start"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
