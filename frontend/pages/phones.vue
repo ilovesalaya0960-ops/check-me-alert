@@ -148,6 +148,87 @@
         </div>
       </section>
     </main>
+
+    <!-- Edit Modal -->
+    <div v-if="isEditModalOpen" class="modal-overlay" @click="cancelEdit">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2>✏️ แก้ไขข้อมูลเบอร์</h2>
+          <button @click="cancelEdit" class="close-button">✕</button>
+        </div>
+        <form @submit.prevent="updatePhone" class="edit-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>เบอร์โทรศัพท์</label>
+              <input
+                v-model="editingPhone.number"
+                type="text"
+                placeholder="081-234-5678"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>ค่ายเครือข่าย</label>
+              <select v-model="editingPhone.network" required>
+                <option value="">เลือกค่าย</option>
+                <option value="AIS">AIS</option>
+                <option value="DTAC">DTAC</option>
+                <option value="TRUE">TRUE</option>
+                <option value="NT">NT</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>แพ็กเกจ</label>
+              <input
+                v-model="editingPhone.package"
+                type="text"
+                placeholder="เน็ตไม่อั้น 30 วัน"
+              />
+            </div>
+            <div class="form-group">
+              <label>ค่าใช้จ่าย/เดือน</label>
+              <input
+                v-model="editingPhone.monthlyCost"
+                type="number"
+                placeholder="199"
+              />
+            </div>
+            <div class="form-group">
+              <label>วันที่หมดอายุ</label>
+              <input
+                v-model="editingPhone.expiryDate"
+                type="date"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>สถานะ</label>
+              <select v-model="editingPhone.status">
+                <option value="active">ใช้งาน</option>
+                <option value="inactive">ไม่ใช้งาน</option>
+                <option value="expired">หมดอายุ</option>
+              </select>
+            </div>
+            <div class="form-group full-width">
+              <label>หมายเหตุ</label>
+              <textarea
+                v-model="editingPhone.notes"
+                placeholder="หมายเหตุเพิ่มเติม"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" @click="cancelEdit" class="cancel-button">
+              ยกเลิก
+            </button>
+            <button type="submit" class="update-button">
+              อัพเดท
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -166,6 +247,10 @@ const newPhone = ref({
 })
 const filterStatus = ref('all')
 const searchQuery = ref('')
+
+// Edit modal state
+const isEditModalOpen = ref(false)
+const editingPhone = ref(null)
 
 // Load initial data
 onMounted(() => {
@@ -248,17 +333,32 @@ const addPhone = () => {
 }
 
 const editPhone = (phone) => {
-  const updatedPhone = { ...phone }
-  // Simple edit - could be enhanced with a modal
-  const newNumber = prompt('เบอร์โทรศัพท์:', phone.number)
-  if (newNumber && newNumber !== phone.number) {
-    updatedPhone.number = newNumber
-    const index = phones.value.findIndex(p => p.id === phone.id)
-    if (index !== -1) {
-      phones.value[index] = updatedPhone
-      savePhones()
-    }
+  editingPhone.value = { ...phone }
+  isEditModalOpen.value = true
+}
+
+const updatePhone = () => {
+  if (!editingPhone.value.number || !editingPhone.value.network || !editingPhone.value.expiryDate) {
+    alert('กรุณากรอกข้อมูลที่จำเป็น')
+    return
   }
+
+  const index = phones.value.findIndex(p => p.id === editingPhone.value.id)
+  if (index !== -1) {
+    phones.value[index] = {
+      ...editingPhone.value,
+      monthlyCost: editingPhone.value.monthlyCost ? Number(editingPhone.value.monthlyCost) : null
+    }
+    savePhones()
+    isEditModalOpen.value = false
+    editingPhone.value = null
+    alert('อัพเดทข้อมูลสำเร็จ!')
+  }
+}
+
+const cancelEdit = () => {
+  isEditModalOpen.value = false
+  editingPhone.value = null
 }
 
 const deletePhone = (id) => {
@@ -625,6 +725,131 @@ useHead({
   font-size: 1.1em;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 30px 15px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.modal-header h2 {
+  color: #2c3e50;
+  margin: 0;
+  font-size: 1.3em;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: #f8f9fa;
+  color: #e74c3c;
+}
+
+.edit-form {
+  padding: 20px 30px 30px;
+}
+
+.edit-form .form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-bottom: 25px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  border-top: 1px solid #ecf0f1;
+  padding-top: 20px;
+}
+
+.cancel-button, .update-button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-button {
+  background: #95a5a6;
+  color: white;
+}
+
+.cancel-button:hover {
+  background: #7f8c8d;
+}
+
+.update-button {
+  background: #27ae60;
+  color: white;
+}
+
+.update-button:hover {
+  background: #219a52;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(39, 174, 96, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
   .phone-management-system {
     padding: 15px;
@@ -650,6 +875,31 @@ useHead({
 
   .filter-controls {
     flex-direction: column;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 20px 20px 15px;
+  }
+
+  .edit-form {
+    padding: 15px 20px 25px;
+  }
+
+  .edit-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancel-button, .update-button {
+    width: 100%;
   }
 }
 </style>
