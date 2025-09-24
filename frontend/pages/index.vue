@@ -100,37 +100,167 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
-// Sample data
-const totalPhones = ref(25)
-const activePhones = ref(23)
-const expiringPhones = ref(3)
-const totalCost = ref('4,850 ฿')
+// Real data from localStorage
+const phones = ref([])
 
-const recentActivities = ref([
-  {
-    id: 1,
-    icon: '➕',
-    title: 'เพิ่มเบอร์ใหม่',
-    description: '081-234-5678 (AIS) ถูกเพิ่มเข้าระบบ',
-    time: '5 นาทีที่แล้ว'
-  },
-  {
-    id: 2,
-    icon: '🔔',
-    title: 'แจ้งเตือนหมดอายุ',
-    description: '082-345-6789 (DTAC) จะหมดอายุในอีก 7 วัน',
-    time: '1 ชั่วโมงที่แล้ว'
-  },
-  {
-    id: 3,
-    icon: '💰',
-    title: 'ต่ออายุแพ็กเกจ',
-    description: '083-456-7890 (TRUE) ต่ออายุแพ็กเกจเรียบร้อย',
-    time: '3 ชั่วโมงที่แล้ว'
+onMounted(() => {
+  loadPhones()
+})
+
+const loadPhones = () => {
+  const savedPhones = localStorage.getItem('phoneNumbers')
+  if (savedPhones) {
+    phones.value = JSON.parse(savedPhones)
+  } else {
+    // Default sample data if no data exists
+    phones.value = [
+      {
+        id: 1,
+        number: '081-234-5678',
+        network: 'AIS',
+        package: 'เน็ตไม่อั้น 30 วัน',
+        monthlyCost: 199,
+        expiryDate: '2024-02-15',
+        status: 'active',
+        notes: 'เบอร์หลัก',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        number: '082-345-6789',
+        network: 'DTAC',
+        package: 'โทรไม่อั้น',
+        monthlyCost: 299,
+        expiryDate: '2024-01-28',
+        status: 'active',
+        notes: 'เบอร์สำรอง',
+        createdAt: new Date(Date.now() - 86400000).toISOString() // Yesterday
+      },
+      {
+        id: 3,
+        number: '083-456-7890',
+        network: 'TRUE',
+        package: 'เน็ต 10GB',
+        monthlyCost: 159,
+        expiryDate: '2024-01-20',
+        status: 'expired',
+        notes: 'ไม่ได้ใช้แล้ว',
+        createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
+      }
+    ]
+    // Save sample data
+    localStorage.setItem('phoneNumbers', JSON.stringify(phones.value))
   }
-])
+}
+
+// Computed values from real data
+const totalPhones = computed(() => phones.value.length)
+
+const activePhones = computed(() =>
+  phones.value.filter(phone => phone.status === 'active').length
+)
+
+const expiringPhones = computed(() => {
+  const today = new Date()
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+  return phones.value.filter(phone => {
+    const expiryDate = new Date(phone.expiryDate)
+    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+  }).length
+})
+
+const totalCost = computed(() => {
+  const total = phones.value
+    .filter(phone => phone.status === 'active')
+    .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
+  return total.toLocaleString() + ' ฿'
+})
+
+// Generate recent activities from real data
+const recentActivities = computed(() => {
+  const activities = []
+
+  // Get recent phones (sorted by creation date)
+  const recentPhones = [...phones.value]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, 2)
+
+  // Add recent phone additions
+  recentPhones.forEach((phone, index) => {
+    activities.push({
+      id: `add_${phone.id}`,
+      icon: '➕',
+      title: 'เพิ่มเบอร์ใหม่',
+      description: `${phone.number} (${phone.network}) ถูกเพิ่มเข้าระบบ`,
+      time: getTimeAgo(phone.createdAt || new Date().toISOString())
+    })
+  })
+
+  // Add expiring phone alerts
+  const today = new Date()
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const expiringList = phones.value.filter(phone => {
+    const expiryDate = new Date(phone.expiryDate)
+    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+  })
+
+  expiringList.forEach(phone => {
+    const daysLeft = Math.ceil((new Date(phone.expiryDate) - today) / (1000 * 60 * 60 * 24))
+    activities.push({
+      id: `expiry_${phone.id}`,
+      icon: '🔔',
+      title: 'แจ้งเตือนหมดอายุ',
+      description: `${phone.number} (${phone.network}) จะหมดอายุในอีก ${daysLeft} วัน`,
+      time: 'เมื่อสักครู่'
+    })
+  })
+
+  // Add cost summary if there are active phones
+  const activeCost = phones.value
+    .filter(phone => phone.status === 'active')
+    .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
+
+  if (activeCost > 0) {
+    activities.push({
+      id: 'cost_summary',
+      icon: '💰',
+      title: 'สรุปค่าใช้จ่าย',
+      description: `ค่าใช้จ่ายรวมต่อเดือน ${activeCost.toLocaleString()} บาท`,
+      time: 'อัพเดทแล้ว'
+    })
+  }
+
+  // If no activities, show welcome message
+  if (activities.length === 0) {
+    activities.push({
+      id: 'welcome',
+      icon: '🎉',
+      title: 'ยินดีต้อนรับ',
+      description: 'เริ่มต้นใช้งานด้วยการเพิ่มเบอร์มือถือแรกของคุณ',
+      time: 'เมื่อสักครู่'
+    })
+  }
+
+  return activities.slice(0, 3) // Show only 3 most recent
+})
+
+const getTimeAgo = (dateString) => {
+  const now = new Date()
+  const date = new Date(dateString)
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'เมื่อสักครู่'
+  if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`
+  if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`
+  if (diffDays === 1) return 'เมื่อวาน'
+  if (diffDays < 7) return `${diffDays} วันที่แล้ว`
+  return date.toLocaleDateString('th-TH')
+}
 
 useHead({
   title: 'ระบบจัดการเบอร์มือถือ - หน้าหลัก',
