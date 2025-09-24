@@ -1,23 +1,13 @@
 {
-  "name": "phone-number-management-frontend",
+  "name": "phone-management-frontend",
   "private": true,
   "scripts": {
-    "build": "./node_modules/.bin/nuxt build",
-    "dev": "./node_modules/.bin/nuxt dev",
-    "generate": "./node_modules/.bin/nuxt generate",
-    "preview": "./node_modules/.bin/nuxt preview",
-    "start": "./node_modules/.bin/nuxt start"
-  },
-  "devDependencies": {
-    "@nuxt/devtools": "^1.3.9",
-    "@nuxt/kit": "^3.8.0",
-    "@nuxtjs/tailwindcss": "^6.12.0",
-    "tailwindcss": "^3.4.0"
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
   },
   "dependencies": {
-    "@headlessui/vue": "^1.7.16",
-    "@heroicons/vue": "^2.0.18",
-    "axios": "^1.6.0",
     "nuxt": "^3.13.0"
   }
 }

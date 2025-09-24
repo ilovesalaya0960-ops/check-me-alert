@@ -1,107 +1,42 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div class="px-4 py-6 sm:px-0">
-        <div class="text-center">
-          <h1 class="text-4xl font-bold text-gray-900 mb-8">
-            ระบบบันทึกข้อมูลเบอร์มือถือ
-          </h1>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mt-8">
-            <NuxtLink
-              to="/phone-numbers"
-              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <div class="p-6">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <PhoneIcon class="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">จัดการเบอร์</h3>
-                    <p class="text-sm text-gray-500">ดูรายการเบอร์ทั้งหมด</p>
-                  </div>
-                </div>
-              </div>
-            </NuxtLink>
-
-            <NuxtLink
-              to="/phone-numbers/create"
-              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <div class="p-6">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <PlusIcon class="h-8 w-8 text-green-600" />
-                  </div>
-                  <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">เพิ่มเบอร์ใหม่</h3>
-                    <p class="text-sm text-gray-500">บันทึกข้อมูลเบอร์ใหม่</p>
-                  </div>
-                </div>
-              </div>
-            </NuxtLink>
-
-            <NuxtLink
-              to="/phone-numbers/expiring"
-              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <div class="p-6">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <ExclamationTriangleIcon class="h-8 w-8 text-orange-600" />
-                  </div>
-                  <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">ใกล้หมดอายุ</h3>
-                    <p class="text-sm text-gray-500">เช็คเบอร์ที่จะหมดอายุ</p>
-                  </div>
-                </div>
-              </div>
-            </NuxtLink>
-
-            <NuxtLink
-              to="/phone-numbers/stats"
-              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <div class="p-6">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <ChartBarIcon class="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">สถิติ</h3>
-                    <p class="text-sm text-gray-500">สถิติแยกตามค่าย</p>
-                  </div>
-                </div>
-              </div>
-            </NuxtLink>
-
-            <NuxtLink
-              to="/telegram"
-              class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <div class="p-6">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0">
-                    <BellIcon class="h-8 w-8 text-indigo-600" />
-                  </div>
-                  <div class="ml-4">
-                    <h3 class="text-lg font-medium text-gray-900">แจ้งเตือน</h3>
-                    <p class="text-sm text-gray-500">ตั้งค่า Telegram</p>
-                  </div>
-                </div>
-              </div>
-            </NuxtLink>
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <h1 class="text-xl font-bold text-gray-900">Phone Management</h1>
           </div>
         </div>
       </div>
-    </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 px-4">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">
+          Welcome to Phone Management System
+        </h2>
+        <p class="text-lg text-gray-600 mb-8">
+          A simple system for managing phone numbers
+        </p>
+
+        <div class="bg-white rounded-lg shadow p-8">
+          <h3 class="text-xl font-semibold mb-4">System Status</h3>
+          <p class="text-green-600 text-lg">✅ Application is running successfully!</p>
+          <p class="text-gray-500 mt-2">Deployed on Netlify</p>
+          <p class="text-sm text-gray-400 mt-4">Built with Nuxt 3 • {{ new Date().toLocaleString() }}</p>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { PhoneIcon, PlusIcon, ExclamationTriangleIcon, ChartBarIcon, BellIcon } from '@heroicons/vue/24/outline'
-
 useHead({
-  title: 'ระบบบันทึกข้อมูลเบอร์มือถือ'
+  title: 'Phone Management System',
+  meta: [
+    { name: 'description', content: 'Simple Phone Number Management System' }
+  ]
 })
 </script>
