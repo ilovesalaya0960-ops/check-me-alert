@@ -106,39 +106,66 @@
           </div>
         </div>
 
-        <div class="phone-grid">
-          <div v-for="phone in filteredPhones" :key="phone.id" class="phone-card">
-            <div class="phone-header">
-              <h3>{{ phone.number }}</h3>
-              <span :class="['status-badge', phone.status]">{{ getStatusText(phone.status) }}</span>
-            </div>
-            <div class="phone-details">
-              <div class="detail-item">
-                <span class="label">ค่าย:</span>
-                <span class="value">{{ phone.network }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">แพ็กเกจ:</span>
-                <span class="value">{{ phone.package || '-' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">ค่าใช้จ่าย:</span>
-                <span class="value">{{ phone.monthlyCost ? phone.monthlyCost + ' ฿' : '-' }}</span>
-              </div>
-              <div class="detail-item">
-                <span class="label">หมดอายุ:</span>
-                <span class="value">{{ formatDate(phone.expiryDate) }}</span>
-              </div>
-              <div v-if="phone.notes" class="detail-item notes">
-                <span class="label">หมายเหตุ:</span>
-                <span class="value">{{ phone.notes }}</span>
-              </div>
-            </div>
-            <div class="phone-actions">
-              <button @click="editPhone(phone)" class="edit-button">✏️ แก้ไข</button>
-              <button @click="deletePhone(phone.id)" class="delete-button">🗑️ ลบ</button>
-            </div>
-          </div>
+        <div class="phone-table">
+          <table>
+            <thead>
+              <tr>
+                <th>เบอร์โทรศัพท์</th>
+                <th>ค่าย</th>
+                <th>แพ็กเกจ</th>
+                <th>ค่าใช้จ่าย/เดือน</th>
+                <th>วันหมดอายุ</th>
+                <th>สถานะ</th>
+                <th>หมายเหตุ</th>
+                <th>การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="phone in filteredPhones" :key="phone.id" class="phone-row">
+                <td class="phone-number">
+                  <strong>{{ phone.number }}</strong>
+                </td>
+                <td class="network">
+                  <span class="network-badge" :class="phone.network.toLowerCase()">
+                    {{ phone.network }}
+                  </span>
+                </td>
+                <td class="package">
+                  {{ phone.package || '-' }}
+                </td>
+                <td class="cost">
+                  <span v-if="phone.monthlyCost" class="cost-amount">
+                    {{ phone.monthlyCost.toLocaleString() }} ฿
+                  </span>
+                  <span v-else class="no-cost">-</span>
+                </td>
+                <td class="expiry">
+                  <span :class="getExpiryClass(phone.expiryDate, phone.status)">
+                    {{ formatDate(phone.expiryDate) }}
+                  </span>
+                </td>
+                <td class="status">
+                  <span :class="['status-badge', phone.status]">
+                    {{ getStatusText(phone.status) }}
+                  </span>
+                </td>
+                <td class="notes">
+                  <span v-if="phone.notes" class="note-text" :title="phone.notes">
+                    {{ phone.notes.length > 20 ? phone.notes.substring(0, 20) + '...' : phone.notes }}
+                  </span>
+                  <span v-else class="no-notes">-</span>
+                </td>
+                <td class="actions">
+                  <button @click="editPhone(phone)" class="action-btn edit-btn" title="แก้ไข">
+                    ✏️
+                  </button>
+                  <button @click="deletePhone(phone.id)" class="action-btn delete-btn" title="ลบ">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div v-if="filteredPhones.length === 0" class="empty-state">
@@ -417,6 +444,20 @@ const formatDate = (dateString) => {
   })
 }
 
+const getExpiryClass = (expiryDate, status) => {
+  if (!expiryDate || status !== 'active') return ''
+
+  const today = new Date()
+  const expiry = new Date(expiryDate)
+  const diffTime = expiry - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) return 'expired-date'
+  if (diffDays <= 7) return 'expiring-soon'
+  if (diffDays <= 30) return 'expiring-month'
+  return 'normal-date'
+}
+
 useHead({
   title: 'จัดการเบอร์มือถือ - ระบบจัดการเบอร์มือถือ'
 })
@@ -585,45 +626,127 @@ useHead({
   font-size: 14px;
 }
 
-.phone-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
-}
-
-.phone-card {
-  border: 2px solid #ecf0f1;
+.phone-table {
+  background: white;
   border-radius: 12px;
-  padding: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.phone-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.phone-table th {
   background: #f8f9fa;
-  transition: all 0.3s ease;
-}
-
-.phone-card:hover {
-  border-color: #3498db;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.15);
-}
-
-.phone-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.phone-header h3 {
   color: #2c3e50;
-  margin: 0;
-  font-size: 1.2em;
+  font-weight: 600;
+  padding: 15px 12px;
+  text-align: left;
+  border-bottom: 2px solid #ecf0f1;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.phone-table td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f2f6;
+  vertical-align: middle;
+}
+
+.phone-row {
+  transition: all 0.2s ease;
+}
+
+.phone-row:hover {
+  background: #f8f9fa;
+}
+
+.phone-row:last-child td {
+  border-bottom: none;
+}
+
+.phone-number strong {
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.network-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.network-badge.ais {
+  background: #e8f5e8;
+  color: #27ae60;
+}
+
+.network-badge.dtac {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.network-badge.true {
+  background: #ffebee;
+  color: #f44336;
+}
+
+.network-badge.nt {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.package {
+  color: #5a6c7d;
+  max-width: 150px;
+}
+
+.cost-amount {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.no-cost, .no-notes {
+  color: #bdc3c7;
+  font-style: italic;
+}
+
+.expiry {
+  font-weight: 500;
+}
+
+.normal-date {
+  color: #2c3e50;
+}
+
+.expiring-month {
+  color: #f39c12;
+}
+
+.expiring-soon {
+  color: #e67e22;
+  font-weight: 600;
+}
+
+.expired-date {
+  color: #e74c3c;
+  font-weight: 600;
 }
 
 .status-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .status-badge.active {
@@ -641,67 +764,49 @@ useHead({
   color: #e74c3c;
 }
 
-.phone-details {
-  margin-bottom: 20px;
+.note-text {
+  color: #5a6c7d;
+  cursor: help;
 }
 
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #ecf0f1;
+.actions {
+  white-space: nowrap;
 }
 
-.detail-item.notes {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-}
-
-.detail-item .label {
-  font-weight: 500;
-  color: #7f8c8d;
-  font-size: 0.9em;
-}
-
-.detail-item .value {
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.phone-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.edit-button, .delete-button {
-  flex: 1;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+.action-btn {
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: 0 2px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
-.edit-button {
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.edit-btn {
+  border-color: #f39c12;
+  color: #f39c12;
+}
+
+.edit-btn:hover {
   background: #f39c12;
   color: white;
 }
 
-.edit-button:hover {
-  background: #e67e22;
+.delete-btn {
+  border-color: #e74c3c;
+  color: #e74c3c;
 }
 
-.delete-button {
+.delete-btn:hover {
   background: #e74c3c;
   color: white;
-}
-
-.delete-button:hover {
-  background: #c0392b;
 }
 
 .empty-state {
@@ -864,8 +969,23 @@ useHead({
     grid-template-columns: 1fr;
   }
 
-  .phone-grid {
-    grid-template-columns: 1fr;
+  .phone-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .phone-table table {
+    min-width: 800px;
+  }
+
+  .phone-table th,
+  .phone-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .phone-table th {
+    font-size: 11px;
   }
 
   .list-header {
