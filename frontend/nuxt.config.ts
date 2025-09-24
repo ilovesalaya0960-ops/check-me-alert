@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
+  // modules: ['@nuxtjs/tailwindcss'],  // Temporarily removed for deployment
 
   // Netlify deployment configuration
   nitro: {
