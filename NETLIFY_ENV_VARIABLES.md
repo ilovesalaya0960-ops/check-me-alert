@@ -24,8 +24,8 @@ NUXT_PUBLIC_SITE_DESCRIPTION=ระบบจัดการข้อมูลเ
 
 ### 🏗️ Build Configuration
 ```
-NODE_VERSION=18
-NPM_VERSION=9
+NODE_VERSION=20
+NPM_VERSION=10
 NODE_ENV=production
 ```
 
@@ -87,8 +87,8 @@ Base directory: frontend
 | `NUXT_PUBLIC_APP_NAME` | `Phone Number Management System` | App name |
 | `NUXT_PUBLIC_DOMAIN` | `yourdomain.com` | Your domain |
 | `NUXT_PUBLIC_SITE_URL` | `https://yourdomain.com` | Site URL |
-| `NODE_VERSION` | `18` | Node.js version |
-| `NPM_VERSION` | `9` | NPM version |
+| `NODE_VERSION` | `20` | Node.js version |
+| `NPM_VERSION` | `10` | NPM version |
 
 ### 4. Custom Domain (Optional)
 1. ไปที่ Site settings → Domain management

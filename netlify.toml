@@ -10,8 +10,8 @@
 
 [build.environment]
   # Node.js version for build
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
 
 # Headers for security and performance
 [[headers]]
