@@ -117,7 +117,8 @@
               <option value="active">ใช้งาน</option>
               <option value="inactive">ไม่ใช้งาน</option>
               <option value="expired">หมดอายุ</option>
-              <option value="expiring">ใกล้หมดอายุ</option>
+              <option value="package-expiring">โปรใกล้หมดอายุ</option>
+              <option value="expiring">ซิม/โปรใกล้หมดอายุ</option>
             </select>
             <input
               v-model="searchQuery"
@@ -350,6 +351,12 @@ const editingPhone = ref(null)
 // Load initial data
 onMounted(() => {
   loadPhones()
+
+  // Check for filter query parameter
+  const route = useRoute()
+  if (route.query.filter) {
+    handleQueryFilter(route.query.filter)
+  }
 })
 
 const loadPhones = () => {
@@ -405,6 +412,19 @@ const loadPhones = () => {
 
 const savePhones = () => {
   localStorage.setItem('phoneNumbers', JSON.stringify(phones.value))
+}
+
+const handleQueryFilter = (filter) => {
+  switch (filter) {
+    case 'package-expiring':
+      filterStatus.value = 'package-expiring'
+      break
+    case 'expiring':
+      filterStatus.value = 'expiring'
+      break
+    default:
+      filterStatus.value = filter
+  }
 }
 
 const addPhone = () => {
@@ -480,7 +500,15 @@ const filteredPhones = computed(() => {
 
   // Filter by status
   if (filterStatus.value !== 'all') {
-    if (filterStatus.value === 'expiring') {
+    if (filterStatus.value === 'package-expiring') {
+      const today = new Date()
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+      result = result.filter(phone => {
+        // Check only package expiry
+        const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+        return packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today && phone.status === 'active'
+      })
+    } else if (filterStatus.value === 'expiring') {
       const today = new Date()
       const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
       result = result.filter(phone => {

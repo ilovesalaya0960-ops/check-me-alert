@@ -34,13 +34,13 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <NuxtLink to="/phones?filter=package-expiring" class="stat-card clickable">
           <div class="stat-icon">⚠️</div>
           <div class="stat-info">
             <h3>{{ expiringPhones }}</h3>
-            <p>ใกล้หมดอายุ</p>
+            <p>โปรใกล้หมดอายุ</p>
           </div>
-        </div>
+        </NuxtLink>
 
         <div class="stat-card">
           <div class="stat-icon">💰</div>
@@ -174,14 +174,9 @@ const expiringPhones = computed(() => {
   return phones.value.filter(phone => {
     if (phone.status !== 'active') return false
 
-    // Check both package expiry and SIM expiry
+    // Check only package expiry for homepage alert
     const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
-
-    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
-    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
-
-    return packageExpiring || simExpiring
+    return packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
   }).length
 })
 
@@ -212,47 +207,26 @@ const recentActivities = computed(() => {
     })
   })
 
-  // Add expiring phone alerts
+  // Add expiring package alerts only
   const today = new Date()
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   const expiringList = phones.value.filter(phone => {
     if (phone.status !== 'active') return false
 
     const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
-
-    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
-    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
-
-    return packageExpiring || simExpiring
+    return packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
   })
 
   expiringList.forEach(phone => {
-    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
-
-    // Check which one is expiring sooner
-    if (packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today) {
-      const daysLeft = Math.ceil((packageExpiry - today) / (1000 * 60 * 60 * 24))
-      activities.push({
-        id: `package_expiry_${phone.id}`,
-        icon: '📦',
-        title: 'โปรใกล้หมดอายุ',
-        description: `${phone.number} (${phone.network}) โปรจะหมดอายุในอีก ${daysLeft} วัน`,
-        time: 'เมื่อสักครู่'
-      })
-    }
-
-    if (simExpiry && simExpiry <= nextWeek && simExpiry >= today) {
-      const daysLeft = Math.ceil((simExpiry - today) / (1000 * 60 * 60 * 24))
-      activities.push({
-        id: `sim_expiry_${phone.id}`,
-        icon: '🔔',
-        title: 'ซิมใกล้หมดอายุ',
-        description: `${phone.number} (${phone.network}) ซิมจะหมดอายุในอีก ${daysLeft} วัน`,
-        time: 'เมื่อสักครู่'
-      })
-    }
+    const packageExpiry = new Date(phone.packageExpiryDate)
+    const daysLeft = Math.ceil((packageExpiry - today) / (1000 * 60 * 60 * 24))
+    activities.push({
+      id: `package_expiry_${phone.id}`,
+      icon: '📦',
+      title: 'โปรใกล้หมดอายุ',
+      description: `${phone.number} (${phone.network}) โปรจะหมดอายุในอีก ${daysLeft} วัน`,
+      time: 'เมื่อสักครู่'
+    })
   })
 
   // Add cost summary if there are active phones
@@ -393,6 +367,18 @@ useHead({
 
 .stat-card:hover {
   transform: translateY(-5px);
+}
+
+.stat-card.clickable {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 25px rgba(52, 152, 219, 0.2);
+  border: 2px solid #3498db;
 }
 
 .stat-icon {
