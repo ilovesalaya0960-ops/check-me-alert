@@ -123,7 +123,7 @@ const loadPhones = () => {
         package: 'เน็ตไม่อั้น 30 วัน',
         monthlyCost: 199,
         packageStartDate: '2024-01-15',
-        packageExpiryDate: '2024-02-14',
+        packageExpiryDate: getCalculatedExpiryDate('2024-01-15'),
         simExpiryDate: '2025-01-15',
         status: 'active',
         notes: 'เบอร์หลัก',
@@ -136,7 +136,7 @@ const loadPhones = () => {
         package: 'โทรไม่อั้น',
         monthlyCost: 299,
         packageStartDate: '2023-12-28',
-        packageExpiryDate: '2024-01-27',
+        packageExpiryDate: getCalculatedExpiryDate('2023-12-28'),
         simExpiryDate: '2024-12-28',
         status: 'active',
         notes: 'เบอร์สำรอง',
@@ -149,7 +149,7 @@ const loadPhones = () => {
         package: 'เน็ต 10GB',
         monthlyCost: 159,
         packageStartDate: '2023-12-20',
-        packageExpiryDate: '2024-01-19',
+        packageExpiryDate: getCalculatedExpiryDate('2023-12-20'),
         simExpiryDate: '2023-12-20',
         status: 'expired',
         notes: 'ไม่ได้ใช้แล้ว',
@@ -257,6 +257,14 @@ const recentActivities = computed(() => {
 
   return activities.slice(0, 3) // Show only 3 most recent
 })
+
+const getCalculatedExpiryDate = (startDate) => {
+  if (!startDate) return ''
+  const start = new Date(startDate)
+  const expiry = new Date(start)
+  expiry.setDate(start.getDate() + 30)
+  return expiry.toISOString().split('T')[0]
+}
 
 const getTimeAgo = (dateString) => {
   const now = new Date()

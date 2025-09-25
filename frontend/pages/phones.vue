@@ -69,13 +69,16 @@
               <input
                 v-model="newPhone.packageStartDate"
                 type="date"
+                @change="calculatePackageExpiry"
               />
             </div>
-            <div class="form-group">
-              <label>วันที่โปรหมดอายุ</label>
+            <div class="form-group" v-if="newPhone.packageStartDate">
+              <label>วันที่โปรหมดอายุ (คำนวณอัตโนมัติ)</label>
               <input
-                v-model="newPhone.packageExpiryDate"
+                :value="getCalculatedExpiryDate(newPhone.packageStartDate)"
                 type="date"
+                readonly
+                class="readonly-field"
               />
             </div>
             <div class="form-group">
@@ -277,13 +280,16 @@
               <input
                 v-model="editingPhone.packageStartDate"
                 type="date"
+                @change="calculateEditPackageExpiry"
               />
             </div>
-            <div class="form-group">
-              <label>วันที่โปรหมดอายุ</label>
+            <div class="form-group" v-if="editingPhone.packageStartDate">
+              <label>วันที่โปรหมดอายุ (คำนวณอัตโนมัติ)</label>
               <input
-                v-model="editingPhone.packageExpiryDate"
+                :value="getCalculatedExpiryDate(editingPhone.packageStartDate)"
                 type="date"
+                readonly
+                class="readonly-field"
               />
             </div>
             <div class="form-group">
@@ -336,7 +342,6 @@ const newPhone = ref({
   package: '',
   monthlyCost: '',
   packageStartDate: '',
-  packageExpiryDate: '',
   simExpiryDate: '',
   status: 'active',
   notes: ''
@@ -364,8 +369,8 @@ const loadPhones = () => {
   if (savedPhones) {
     phones.value = JSON.parse(savedPhones)
   } else {
-    // Sample data
-    phones.value = [
+    // Sample data - with calculated expiry dates
+    const sampleData = [
       {
         id: 1,
         number: '081-234-5678',
@@ -374,7 +379,6 @@ const loadPhones = () => {
         package: 'เน็ตไม่อั้น 30 วัน',
         monthlyCost: 199,
         packageStartDate: '2024-01-15',
-        packageExpiryDate: '2024-02-14',
         simExpiryDate: '2025-01-15',
         status: 'active',
         notes: 'เบอร์หลัก'
@@ -387,7 +391,6 @@ const loadPhones = () => {
         package: 'โทรไม่อั้น',
         monthlyCost: 299,
         packageStartDate: '2023-12-28',
-        packageExpiryDate: '2024-01-27',
         simExpiryDate: '2024-12-28',
         status: 'active',
         notes: 'เบอร์สำรอง'
@@ -400,12 +403,17 @@ const loadPhones = () => {
         package: 'เน็ต 10GB',
         monthlyCost: 159,
         packageStartDate: '2023-12-20',
-        packageExpiryDate: '2024-01-19',
         simExpiryDate: '2023-12-20',
         status: 'expired',
         notes: 'ไม่ได้ใช้แล้ว'
       }
     ]
+
+    // Calculate packageExpiryDate for each sample
+    phones.value = sampleData.map(phone => ({
+      ...phone,
+      packageExpiryDate: phone.packageStartDate ? getCalculatedExpiryDate(phone.packageStartDate) : null
+    }))
     savePhones()
   }
 }
@@ -427,6 +435,22 @@ const handleQueryFilter = (filter) => {
   }
 }
 
+const getCalculatedExpiryDate = (startDate) => {
+  if (!startDate) return ''
+  const start = new Date(startDate)
+  const expiry = new Date(start)
+  expiry.setDate(start.getDate() + 30)
+  return expiry.toISOString().split('T')[0]
+}
+
+const calculatePackageExpiry = () => {
+  // This will trigger reactivity for the readonly field display
+}
+
+const calculateEditPackageExpiry = () => {
+  // This will trigger reactivity for the readonly field display
+}
+
 const addPhone = () => {
   if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
@@ -436,6 +460,7 @@ const addPhone = () => {
   const phone = {
     id: Date.now(),
     ...newPhone.value,
+    packageExpiryDate: newPhone.value.packageStartDate ? getCalculatedExpiryDate(newPhone.value.packageStartDate) : null,
     monthlyCost: newPhone.value.monthlyCost ? Number(newPhone.value.monthlyCost) : null
   }
 
@@ -450,7 +475,6 @@ const addPhone = () => {
     package: '',
     monthlyCost: '',
     packageStartDate: '',
-    packageExpiryDate: '',
     simExpiryDate: '',
     status: 'active',
     notes: ''
@@ -474,6 +498,7 @@ const updatePhone = () => {
   if (index !== -1) {
     phones.value[index] = {
       ...editingPhone.value,
+      packageExpiryDate: editingPhone.value.packageStartDate ? getCalculatedExpiryDate(editingPhone.value.packageStartDate) : null,
       monthlyCost: editingPhone.value.monthlyCost ? Number(editingPhone.value.monthlyCost) : null
     }
     savePhones()
@@ -712,6 +737,12 @@ useHead({
 .form-group textarea:focus {
   outline: none;
   border-color: #3498db;
+}
+
+.readonly-field {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
 }
 
 .submit-button {
