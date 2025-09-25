@@ -19,7 +19,7 @@
       <!-- Add Phone Form -->
       <section class="add-phone-form">
         <h2>➕ เพิ่มเบอร์ใหม่</h2>
-        <form @submit.prevent="addPhone" class="phone-form">
+        <form @submit.prevent="handleAddPhone" class="phone-form">
           <div class="form-grid">
             <div class="form-group">
               <label>เบอร์โทรศัพท์</label>
@@ -114,21 +114,40 @@
       <section class="phone-list">
         <div class="list-header">
           <h2>📋 รายชื่อเบอร์ทั้งหมด</h2>
-          <div class="filter-controls">
-            <select v-model="filterStatus" @change="filterPhones">
-              <option value="all">ทุกสถานะ</option>
-              <option value="active">ใช้งาน</option>
-              <option value="inactive">ไม่ใช้งาน</option>
-              <option value="expired">หมดอายุ</option>
-              <option value="package-expiring">โปรใกล้หมดอายุ</option>
-              <option value="expiring">ซิม/โปรใกล้หมดอายุ</option>
-            </select>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="ค้นหาเบอร์..."
-              @input="searchPhones"
-            />
+          <div class="header-controls">
+            <!-- Data Management Buttons -->
+            <div class="data-management">
+              <button @click="exportData" class="export-btn" title="ส่งออกข้อมูล">
+                💾 Export
+              </button>
+              <label class="import-btn" title="นำเข้าข้อมูล">
+                📁 Import
+                <input
+                  type="file"
+                  accept=".json"
+                  @change="importData"
+                  style="display: none"
+                />
+              </label>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+              <select v-model="filterStatus" @change="filterPhones">
+                <option value="all">ทุกสถานะ</option>
+                <option value="active">ใช้งาน</option>
+                <option value="inactive">ไม่ใช้งาน</option>
+                <option value="expired">หมดอายุ</option>
+                <option value="package-expiring">โปรใกล้หมดอายุ</option>
+                <option value="expiring">ซิม/โปรใกล้หมดอายุ</option>
+              </select>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="ค้นหาเบอร์..."
+                @input="searchPhones"
+              />
+            </div>
           </div>
         </div>
 
@@ -206,7 +225,7 @@
                   <button @click="editPhone(phone)" class="action-btn edit-btn" title="แก้ไข">
                     ✏️
                   </button>
-                  <button @click="deletePhone(phone.id)" class="action-btn delete-btn" title="ลบ">
+                  <button @click="handleDeletePhone(phone.id)" class="action-btn delete-btn" title="ลบ">
                     🗑️
                   </button>
                 </td>
@@ -230,7 +249,7 @@
           <h2>✏️ แก้ไขข้อมูลเบอร์</h2>
           <button @click="cancelEdit" class="close-button">✕</button>
         </div>
-        <form @submit.prevent="updatePhone" class="edit-form">
+        <form @submit.prevent="handleUpdatePhone" class="edit-form">
           <div class="form-grid">
             <div class="form-group">
               <label>เบอร์โทรศัพท์</label>
@@ -334,7 +353,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-const phones = ref([])
+// Use Supabase for data management
+const { phones, loading, error, fetchPhones, addPhone, updatePhone, deletePhone, searchPhones } = usePhones()
+
 const newPhone = ref({
   number: '',
   network: '',
@@ -354,8 +375,8 @@ const isEditModalOpen = ref(false)
 const editingPhone = ref(null)
 
 // Load initial data
-onMounted(() => {
-  loadPhones()
+onMounted(async () => {
+  await fetchPhones()
 
   // Check for filter query parameter
   const route = useRoute()
@@ -363,64 +384,6 @@ onMounted(() => {
     handleQueryFilter(route.query.filter)
   }
 })
-
-const loadPhones = () => {
-  const savedPhones = localStorage.getItem('phoneNumbers')
-  if (savedPhones) {
-    phones.value = JSON.parse(savedPhones)
-  } else {
-    // Sample data - with calculated expiry dates
-    const sampleData = [
-      {
-        id: 1,
-        number: '081-234-5678',
-        network: 'AIS',
-        usageCategory: 'งาน',
-        package: 'เน็ตไม่อั้น 30 วัน',
-        monthlyCost: 199,
-        packageStartDate: '2024-01-15',
-        simExpiryDate: '2025-01-15',
-        status: 'active',
-        notes: 'เบอร์หลัก'
-      },
-      {
-        id: 2,
-        number: '082-345-6789',
-        network: 'DTAC',
-        usageCategory: 'ส่วนตัว',
-        package: 'โทรไม่อั้น',
-        monthlyCost: 299,
-        packageStartDate: '2023-12-28',
-        simExpiryDate: '2024-12-28',
-        status: 'active',
-        notes: 'เบอร์สำรอง'
-      },
-      {
-        id: 3,
-        number: '083-456-7890',
-        network: 'TRUE',
-        usageCategory: 'ธุรกิจ',
-        package: 'เน็ต 10GB',
-        monthlyCost: 159,
-        packageStartDate: '2023-12-20',
-        simExpiryDate: '2023-12-20',
-        status: 'expired',
-        notes: 'ไม่ได้ใช้แล้ว'
-      }
-    ]
-
-    // Calculate packageExpiryDate for each sample
-    phones.value = sampleData.map(phone => ({
-      ...phone,
-      packageExpiryDate: phone.packageStartDate ? getCalculatedExpiryDate(phone.packageStartDate) : null
-    }))
-    savePhones()
-  }
-}
-
-const savePhones = () => {
-  localStorage.setItem('phoneNumbers', JSON.stringify(phones.value))
-}
 
 const handleQueryFilter = (filter) => {
   switch (filter) {
@@ -451,36 +414,97 @@ const calculateEditPackageExpiry = () => {
   // This will trigger reactivity for the readonly field display
 }
 
-const addPhone = () => {
+// Export Data Function
+const exportData = () => {
+  const dataToExport = {
+    phones: phones.value,
+    exportDate: new Date().toISOString(),
+    version: '1.0'
+  }
+
+  const dataStr = JSON.stringify(dataToExport, null, 2)
+  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(dataBlob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `phone-data-${new Date().toISOString().split('T')[0]}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+
+  alert('ส่งออกข้อมูลเรียบร้อยแล้ว!')
+}
+
+// Import Data Function
+const importData = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const importedData = JSON.parse(e.target.result)
+
+      // Validate imported data structure
+      if (importedData.phones && Array.isArray(importedData.phones)) {
+        // Confirm import
+        const confirmImport = confirm(
+          `คุณต้องการนำเข้าข้อมูล ${importedData.phones.length} เบอร์หรือไม่?\n` +
+          `ข้อมูลปัจจุบันจะถูกเขียนทับ`
+        )
+
+        if (confirmImport) {
+          phones.value = importedData.phones.map(phone => ({
+            ...phone,
+            // Ensure required fields exist
+            id: phone.id || Date.now() + Math.random(),
+            packageExpiryDate: phone.packageStartDate ? getCalculatedExpiryDate(phone.packageStartDate) : phone.packageExpiryDate
+          }))
+
+          savePhones()
+          alert('นำเข้าข้อมูลเรียบร้อยแล้ว!')
+
+          // Reset file input
+          event.target.value = ''
+        }
+      } else {
+        alert('ไฟล์ไม่ถูกต้อง กรุณาเลือกไฟล์ที่ส่งออกจากระบบ')
+      }
+    } catch (error) {
+      alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + error.message)
+    }
+  }
+  reader.readAsText(file)
+}
+
+const handleAddPhone = async () => {
   if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
 
-  const phone = {
-    id: Date.now(),
-    ...newPhone.value,
-    packageExpiryDate: newPhone.value.packageStartDate ? getCalculatedExpiryDate(newPhone.value.packageStartDate) : null,
-    monthlyCost: newPhone.value.monthlyCost ? Number(newPhone.value.monthlyCost) : null
+  try {
+    await addPhone(newPhone.value)
+
+    // Reset form
+    newPhone.value = {
+      number: '',
+      network: '',
+      usageCategory: '',
+      package: '',
+      monthlyCost: '',
+      packageStartDate: '',
+      simExpiryDate: '',
+      status: 'active',
+      notes: ''
+    }
+
+    alert('เพิ่มเบอร์สำเร็จ!')
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถเพิ่มเบอร์ได้'))
   }
-
-  phones.value.push(phone)
-  savePhones()
-
-  // Reset form
-  newPhone.value = {
-    number: '',
-    network: '',
-    usageCategory: '',
-    package: '',
-    monthlyCost: '',
-    packageStartDate: '',
-    simExpiryDate: '',
-    status: 'active',
-    notes: ''
-  }
-
-  alert('เพิ่มเบอร์สำเร็จ!')
 }
 
 const editPhone = (phone) => {
@@ -488,23 +512,19 @@ const editPhone = (phone) => {
   isEditModalOpen.value = true
 }
 
-const updatePhone = () => {
+const handleUpdatePhone = async () => {
   if (!editingPhone.value.number || !editingPhone.value.network || !editingPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
 
-  const index = phones.value.findIndex(p => p.id === editingPhone.value.id)
-  if (index !== -1) {
-    phones.value[index] = {
-      ...editingPhone.value,
-      packageExpiryDate: editingPhone.value.packageStartDate ? getCalculatedExpiryDate(editingPhone.value.packageStartDate) : null,
-      monthlyCost: editingPhone.value.monthlyCost ? Number(editingPhone.value.monthlyCost) : null
-    }
-    savePhones()
+  try {
+    await updatePhone(editingPhone.value.id, editingPhone.value)
     isEditModalOpen.value = false
     editingPhone.value = null
     alert('อัพเดทข้อมูลสำเร็จ!')
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถอัปเดตเบอร์ได้'))
   }
 }
 
@@ -513,10 +533,14 @@ const cancelEdit = () => {
   editingPhone.value = null
 }
 
-const deletePhone = (id) => {
+const handleDeletePhone = async (id) => {
   if (confirm('คุณต้องการลบเบอร์นี้หรือไม่?')) {
-    phones.value = phones.value.filter(phone => phone.id !== id)
-    savePhones()
+    try {
+      await deletePhone(id)
+      alert('ลบเบอร์สำเร็จ!')
+    } catch (err) {
+      alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถลบเบอร์ได้'))
+    }
   }
 }
 
@@ -770,6 +794,54 @@ useHead({
   margin-bottom: 25px;
   flex-wrap: wrap;
   gap: 15px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.data-management {
+  display: flex;
+  gap: 10px;
+}
+
+.export-btn, .import-btn {
+  padding: 8px 16px;
+  border: 2px solid #3498db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.export-btn {
+  background: #3498db;
+  color: white;
+}
+
+.export-btn:hover {
+  background: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
+}
+
+.import-btn {
+  background: white;
+  color: #3498db;
+}
+
+.import-btn:hover {
+  background: #3498db;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(52, 152, 219, 0.3);
 }
 
 .filter-controls {

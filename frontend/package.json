@@ -8,6 +8,7 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
     "nuxt": "^3.13.0"
   }
 }

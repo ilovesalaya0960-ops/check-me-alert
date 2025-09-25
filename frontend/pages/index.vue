@@ -102,66 +102,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-// Real data from localStorage
-const phones = ref([])
+// Use Supabase for data management
+const { phones, loading, error, fetchPhones } = usePhones()
 
-onMounted(() => {
-  loadPhones()
+onMounted(async () => {
+  await fetchPhones()
 })
 
-const loadPhones = () => {
-  const savedPhones = localStorage.getItem('phoneNumbers')
-  if (savedPhones) {
-    phones.value = JSON.parse(savedPhones)
-  } else {
-    // Default sample data if no data exists
-    phones.value = [
-      {
-        id: 1,
-        number: '081-234-5678',
-        network: 'AIS',
-        package: 'เน็ตไม่อั้น 30 วัน',
-        monthlyCost: 199,
-        packageStartDate: '2024-01-15',
-        packageExpiryDate: getCalculatedExpiryDate('2024-01-15'),
-        simExpiryDate: '2025-01-15',
-        status: 'active',
-        notes: 'เบอร์หลัก',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        number: '082-345-6789',
-        network: 'DTAC',
-        package: 'โทรไม่อั้น',
-        monthlyCost: 299,
-        packageStartDate: '2023-12-28',
-        packageExpiryDate: getCalculatedExpiryDate('2023-12-28'),
-        simExpiryDate: '2024-12-28',
-        status: 'active',
-        notes: 'เบอร์สำรอง',
-        createdAt: new Date(Date.now() - 86400000).toISOString() // Yesterday
-      },
-      {
-        id: 3,
-        number: '083-456-7890',
-        network: 'TRUE',
-        package: 'เน็ต 10GB',
-        monthlyCost: 159,
-        packageStartDate: '2023-12-20',
-        packageExpiryDate: getCalculatedExpiryDate('2023-12-20'),
-        simExpiryDate: '2023-12-20',
-        status: 'expired',
-        notes: 'ไม่ได้ใช้แล้ว',
-        createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
-      }
-    ]
-    // Save sample data
-    localStorage.setItem('phoneNumbers', JSON.stringify(phones.value))
-  }
-}
-
-// Computed values from real data
+// Computed values from Supabase data
 const totalPhones = computed(() => phones.value.length)
 
 const activePhones = computed(() =>
