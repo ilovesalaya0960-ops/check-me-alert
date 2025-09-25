@@ -5,6 +5,24 @@ export const usePhones = () => {
   const loading = ref(false)
   const error = ref(null)
 
+  // Check if Supabase is available
+  if (!$supabase) {
+    error.value = 'Supabase not initialized'
+    console.error('Supabase client not available')
+    return {
+      phones: readonly(phones),
+      loading: readonly(loading),
+      error: readonly(error),
+      fetchPhones: () => Promise.resolve([]),
+      addPhone: () => Promise.resolve(null),
+      updatePhone: () => Promise.resolve(null),
+      deletePhone: () => Promise.resolve(),
+      searchPhones: () => Promise.resolve([]),
+      convertDbToFrontend: (data) => data,
+      getCalculatedExpiryDate: () => null
+    }
+  }
+
   // ดึงข้อมูลเบอร์ทั้งหมด
   const fetchPhones = async () => {
     loading.value = true
