@@ -183,15 +183,9 @@ const expiringPhones = computed(() => {
   }).length
 })
 
-const totalMonthlyCost = computed(() =>
-  phones.value.reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
-)
+const totalMonthlyCost = computed(() => 0) // Temporarily disabled
 
-const averageCost = computed(() => {
-  const phonesWithCost = phones.value.filter(phone => phone.monthlyCost > 0)
-  if (phonesWithCost.length === 0) return 0
-  return Math.round(phonesWithCost.reduce((sum, phone) => sum + phone.monthlyCost, 0) / phonesWithCost.length)
-})
+const averageCost = computed(() => 0) // Temporarily disabled
 
 const networkStats = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
@@ -217,9 +211,7 @@ const networkCosts = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
   return networks.map(network => ({
     name: network,
-    cost: phones.value
-      .filter(phone => phone.network === network)
-      .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
+    cost: 0 // Temporarily disabled cost calculation
   })).filter(item => item.cost > 0)
 })
 
@@ -269,7 +261,7 @@ const exportToCSV = () => {
       phone.number,
       phone.network,
       phone.package || '',
-      phone.monthlyCost || 0,
+      0, // monthlyCost removed
       phone.expiryDate,
       phone.status,
       phone.notes || ''

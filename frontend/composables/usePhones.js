@@ -57,20 +57,36 @@ export const usePhones = () => {
           getCalculatedExpiryDate(phoneData.packageStartDate) : null
       }
 
+      // ใช้เฉพาะ fields ที่แน่ใจว่ามีใน database
+      const insertData = {
+        phone_number: processedData.number,
+        carrier: processedData.network,
+        status: processedData.status || 'active',
+        notes: processedData.notes || ''
+      }
+
+      // เพิ่ม optional fields ทีละตัว
+      if (processedData.usageCategory) {
+        insertData.usage_category = processedData.usageCategory
+      }
+      if (processedData.package) {
+        insertData.package_name = processedData.package
+      }
+      if (processedData.packageStartDate) {
+        insertData.package_start_date = processedData.packageStartDate
+      }
+      if (processedData.packageExpiryDate) {
+        insertData.package_expiry_date = processedData.packageExpiryDate
+      }
+      if (processedData.simExpiryDate) {
+        insertData.sim_expiry_date = processedData.simExpiryDate
+      }
+
+      console.log('🚀 Inserting data to Supabase:', insertData)
+
       const { data, error: insertError } = await $supabase
         .from('phone_numbers')
-        .insert([{
-          phone_number: processedData.number,
-          carrier: processedData.network,
-          usage_category: processedData.usageCategory,
-          package_name: processedData.package,
-          monthly_cost: processedData.monthlyCost ? Number(processedData.monthlyCost) : null,
-          package_start_date: processedData.packageStartDate || null,
-          package_expiry_date: processedData.packageExpiryDate || null,
-          sim_expiry_date: processedData.simExpiryDate || null,
-          status: processedData.status || 'active',
-          notes: processedData.notes || ''
-        }])
+        .insert([insertData])
         .select()
 
       if (insertError) throw insertError
@@ -95,20 +111,30 @@ export const usePhones = () => {
     error.value = null
 
     try {
-      // คำนวณ packageExpiryDate ใหม่ถ้ามีการเปลี่ยน packageStartDate
+      // ใช้เฉพาะ fields ที่แน่ใจว่ามีใน database
       const processedUpdates = {
         phone_number: updates.number,
         carrier: updates.network,
-        usage_category: updates.usageCategory,
-        package_name: updates.package,
-        monthly_cost: updates.monthlyCost ? Number(updates.monthlyCost) : null,
-        package_start_date: updates.packageStartDate || null,
-        package_expiry_date: updates.packageStartDate ?
-          getCalculatedExpiryDate(updates.packageStartDate) : null,
-        sim_expiry_date: updates.simExpiryDate || null,
         status: updates.status || 'active',
         notes: updates.notes || ''
       }
+
+      // เพิ่ม optional fields ทีละตัว
+      if (updates.usageCategory) {
+        processedUpdates.usage_category = updates.usageCategory
+      }
+      if (updates.package) {
+        processedUpdates.package_name = updates.package
+      }
+      if (updates.packageStartDate) {
+        processedUpdates.package_start_date = updates.packageStartDate
+        processedUpdates.package_expiry_date = getCalculatedExpiryDate(updates.packageStartDate)
+      }
+      if (updates.simExpiryDate) {
+        processedUpdates.sim_expiry_date = updates.simExpiryDate
+      }
+
+      console.log('🔄 Updating data in Supabase:', processedUpdates)
 
       const { data, error: updateError } = await $supabase
         .from('phone_numbers')
@@ -184,17 +210,17 @@ export const usePhones = () => {
   const convertDbToFrontend = (dbRecord) => {
     return {
       id: dbRecord.id,
-      number: dbRecord.phone_number,
-      network: dbRecord.carrier,
-      usageCategory: dbRecord.usage_category,
-      package: dbRecord.package_name,
-      monthlyCost: dbRecord.monthly_cost,
-      packageStartDate: dbRecord.package_start_date,
-      packageExpiryDate: dbRecord.package_expiry_date,
-      simExpiryDate: dbRecord.sim_expiry_date,
-      status: dbRecord.status,
-      notes: dbRecord.notes,
-      createdAt: dbRecord.created_at
+      number: dbRecord.phone_number || '',
+      network: dbRecord.carrier || '',
+      usageCategory: dbRecord.usage_category || '',
+      package: dbRecord.package_name || '',
+      // monthlyCost: 0, // Completely removed
+      packageStartDate: dbRecord.package_start_date || '',
+      packageExpiryDate: dbRecord.package_expiry_date || '',
+      simExpiryDate: dbRecord.sim_expiry_date || '',
+      status: dbRecord.status || 'active',
+      notes: dbRecord.notes || '',
+      createdAt: dbRecord.created_at || new Date().toISOString()
     }
   }
 

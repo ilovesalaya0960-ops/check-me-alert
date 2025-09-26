@@ -106,7 +106,14 @@ import { ref, computed, onMounted } from 'vue'
 const { phones, loading, error, fetchPhones } = usePhones()
 
 onMounted(async () => {
-  await fetchPhones()
+  console.log('🔌 Testing Supabase connection...')
+  try {
+    await fetchPhones()
+    console.log('✅ Supabase connected successfully!')
+    console.log('📊 Loaded phones:', phones.value.length)
+  } catch (err) {
+    console.error('❌ Supabase connection failed:', err)
+  }
 })
 
 // Computed values from Supabase data
@@ -129,10 +136,8 @@ const expiringPhones = computed(() => {
 })
 
 const totalCost = computed(() => {
-  const total = phones.value
-    .filter(phone => phone.status === 'active')
-    .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
-  return total.toLocaleString() + ' ฿'
+  // Temporarily disable cost calculation
+  return '0 ฿'
 })
 
 // Generate recent activities from real data
@@ -177,20 +182,10 @@ const recentActivities = computed(() => {
     })
   })
 
-  // Add cost summary if there are active phones
-  const activeCost = phones.value
-    .filter(phone => phone.status === 'active')
-    .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
-
-  if (activeCost > 0) {
-    activities.push({
-      id: 'cost_summary',
-      icon: '💰',
-      title: 'สรุปค่าใช้จ่าย',
-      description: `ค่าใช้จ่ายรวมต่อเดือน ${activeCost.toLocaleString()} บาท`,
-      time: 'อัพเดทแล้ว'
-    })
-  }
+  // Temporarily disable cost summary
+  // const activeCost = phones.value
+  //   .filter(phone => phone.status === 'active')
+  //   .reduce((sum, phone) => sum + (phone.monthlyCost || 0), 0)
 
   // If no activities, show welcome message
   if (activities.length === 0) {

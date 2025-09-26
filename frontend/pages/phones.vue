@@ -57,11 +57,12 @@
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน</label>
+              <label>ค่าใช้จ่าย/เดือน (ยังไม่สามารถใช้งานได้)</label>
               <input
-                v-model="newPhone.monthlyCost"
                 type="number"
-                placeholder="199"
+                placeholder="0"
+                disabled
+                value="0"
               />
             </div>
             <div class="form-group">
@@ -188,10 +189,7 @@
                   {{ phone.package || '-' }}
                 </td>
                 <td class="cost">
-                  <span v-if="phone.monthlyCost" class="cost-amount">
-                    {{ phone.monthlyCost.toLocaleString() }} ฿
-                  </span>
-                  <span v-else class="no-cost">-</span>
+                  <span class="no-cost">-</span>
                 </td>
                 <td class="package-start">
                   <span v-if="phone.packageStartDate">
@@ -287,11 +285,12 @@
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน</label>
+              <label>ค่าใช้จ่าย/เดือน (ยังไม่สามารถใช้งานได้)</label>
               <input
-                v-model="editingPhone.monthlyCost"
                 type="number"
-                placeholder="199"
+                placeholder="0"
+                disabled
+                value="0"
               />
             </div>
             <div class="form-group">
@@ -361,7 +360,7 @@ const newPhone = ref({
   network: '',
   usageCategory: '',
   package: '',
-  monthlyCost: '',
+  // monthlyCost: '', // Temporarily disabled
   packageStartDate: '',
   simExpiryDate: '',
   status: 'active',
@@ -480,13 +479,19 @@ const importData = (event) => {
 }
 
 const handleAddPhone = async () => {
+  console.log('📝 Form data:', newPhone.value)
+
   if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.simExpiryDate) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
 
+  console.log('✅ Form validation passed')
+
   try {
-    await addPhone(newPhone.value)
+    console.log('🔄 Calling addPhone...')
+    const result = await addPhone(newPhone.value)
+    console.log('✅ addPhone result:', result)
 
     // Reset form
     newPhone.value = {
@@ -494,7 +499,7 @@ const handleAddPhone = async () => {
       network: '',
       usageCategory: '',
       package: '',
-      monthlyCost: '',
+      // monthlyCost: '', // Temporarily disabled
       packageStartDate: '',
       simExpiryDate: '',
       status: 'active',
@@ -503,6 +508,7 @@ const handleAddPhone = async () => {
 
     alert('เพิ่มเบอร์สำเร็จ!')
   } catch (err) {
+    console.error('❌ addPhone error:', err)
     alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถเพิ่มเบอร์ได้'))
   }
 }
