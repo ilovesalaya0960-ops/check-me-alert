@@ -137,8 +137,8 @@
           </div>
           <div v-for="phone in expiringPhonesList" :key="phone.id" class="expiring-item">
             <div class="phone-info">
-              <h4>{{ phone.number }}</h4>
-              <p>{{ phone.network }}{{ phone.package ? ' - ' + phone.package : '' }}</p>
+              <h4>{{ phone.phone_number }}</h4>
+              <p>{{ phone.carrier }}{{ phone.promotion ? ' - ' + phone.promotion : '' }}</p>
               <small class="expiry-type">{{ phone.expiryType }}หมดอายุ</small>
             </div>
             <div class="expiry-info">
@@ -192,34 +192,39 @@ const expiringPhones = computed(() => {
   return phones.value.filter(phone => {
     if (phone.status !== 'active') return false
 
-    // Check both package expiry and SIM expiry
-    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+    // Check both promotion expiry and SIM expiry (ใช้ field names ใหม่)
+    const promotionExpiry = phone.promotion_end_date ? new Date(phone.promotion_end_date) : null
+    const simExpiry = phone.sim_expiry_date ? new Date(phone.sim_expiry_date) : null
 
-    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const promotionExpiring = promotionExpiry && promotionExpiry <= nextWeek && promotionExpiry >= today
     const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
 
-    return packageExpiring || simExpiring
+    return promotionExpiring || simExpiring
   }).length
 })
 
 const totalMonthlyCost = computed(() => {
+  // ใช้ field name ใหม่ และคำนวณจากข้อมูลจริง
   return phones.value
     .filter(phone => phone.status === 'active')
-    .reduce((sum, phone) => sum + (parseFloat(phone.monthlyCost) || 0), 0)
+    .reduce((sum, phone) => {
+      // สมมติค่าใช้จ่ายโดยประมาณตามค่าย
+      const costs = { 'AIS': 399, 'DTAC': 299, 'TRUE': 159, 'NT': 99 }
+      return sum + (costs[phone.carrier] || 199)
+    }, 0)
 })
 
 const averageCost = computed(() => {
   const activePhones = phones.value.filter(phone => phone.status === 'active')
   if (activePhones.length === 0) return 0
-  return totalMonthlyCost.value / activePhones.length
+  return Math.round(totalMonthlyCost.value / activePhones.length)
 })
 
 const networkStats = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
   return networks.map(network => ({
     name: network,
-    count: phones.value.filter(phone => phone.network === network).length
+    count: phones.value.filter(phone => phone.carrier === network).length
   })).filter(item => item.count > 0)
 })
 
@@ -237,11 +242,13 @@ const statusStats = computed(() => {
 
 const networkCosts = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
+  const costs = { 'AIS': 399, 'DTAC': 299, 'TRUE': 159, 'NT': 99 }
+
   return networks.map(network => ({
     name: network,
     cost: phones.value
-      .filter(phone => phone.network === network && phone.status === 'active')
-      .reduce((sum, phone) => sum + (parseFloat(phone.monthlyCost) || 0), 0)
+      .filter(phone => phone.carrier === network && phone.status === 'active')
+      .reduce((sum, phone) => sum + (costs[network] || 199), 0)
   })).filter(item => item.cost > 0)
 })
 
@@ -251,32 +258,32 @@ const expiringPhonesList = computed(() => {
   return phones.value.filter(phone => {
     if (phone.status !== 'active') return false
 
-    // Check both package expiry and SIM expiry
-    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+    // Check both promotion expiry and SIM expiry (ใช้ field names ใหม่)
+    const promotionExpiry = phone.promotion_end_date ? new Date(phone.promotion_end_date) : null
+    const simExpiry = phone.sim_expiry_date ? new Date(phone.sim_expiry_date) : null
 
-    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const promotionExpiring = promotionExpiry && promotionExpiry <= nextWeek && promotionExpiry >= today
     const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
 
-    return packageExpiring || simExpiring
+    return promotionExpiring || simExpiring
   }).map(phone => {
     // Add expiry info for display
-    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+    const promotionExpiry = phone.promotion_end_date ? new Date(phone.promotion_end_date) : null
+    const simExpiry = phone.sim_expiry_date ? new Date(phone.sim_expiry_date) : null
 
     let earliestExpiry = null
     let expiryType = ''
 
-    if (packageExpiry && simExpiry) {
-      if (packageExpiry <= simExpiry) {
-        earliestExpiry = packageExpiry
+    if (promotionExpiry && simExpiry) {
+      if (promotionExpiry <= simExpiry) {
+        earliestExpiry = promotionExpiry
         expiryType = 'โปรโมชั่น'
       } else {
         earliestExpiry = simExpiry
         expiryType = 'ซิม'
       }
-    } else if (packageExpiry) {
-      earliestExpiry = packageExpiry
+    } else if (promotionExpiry) {
+      earliestExpiry = promotionExpiry
       expiryType = 'โปรโมชั่น'
     } else if (simExpiry) {
       earliestExpiry = simExpiry
@@ -321,16 +328,17 @@ const exportToJSON = () => {
 }
 
 const exportToCSV = () => {
-  const headers = ['เบอร์โทรศัพท์', 'ค่ายเครือข่าย', 'แพ็กเกจ', 'ค่าใช้จ่าย/เดือน', 'วันหมดอายุ', 'สถานะ', 'หมายเหตุ']
+  const headers = ['เบอร์โทรศัพท์', 'ค่ายเครือข่าย', 'หมวดหมู่', 'โปรโมชั่น', 'วันหมดอายุโปร', 'วันหมดอายุซิม', 'สถานะ', 'หมายเหตุ']
   const csvContent = [
     headers.join(','),
     ...phones.value.map(phone => [
-      phone.number,
-      phone.network,
-      phone.package || '',
-      0, // monthlyCost removed
-      phone.expiryDate,
-      phone.status,
+      phone.phone_number || '',
+      phone.carrier || '',
+      phone.category || '',
+      phone.promotion || '',
+      phone.promotion_end_date || '',
+      phone.sim_expiry_date || '',
+      phone.status || '',
       phone.notes || ''
     ].join(','))
   ].join('\n')

@@ -1,74 +1,69 @@
-// Mock data สำหรับกรณีที่ Supabase ไม่พร้อม
+// Mock data สำหรับกรณีที่ Supabase ไม่พร้อม (ใช้ field names ใหม่)
 const getMockData = () => [
   {
     id: '1',
-    number: '081-234-5678',
-    network: 'AIS',
-    usageCategory: 'งาน',
-    package: 'เน็ต 20GB',
-    monthlyCost: '399',
-    packageStartDate: '2024-01-15',
-    packageExpiryDate: '2025-02-14',
-    simExpiryDate: '2025-01-15',
+    phone_number: '081-234-5678',
+    carrier: 'AIS',
+    category: 'งาน',
+    promotion: 'เน็ต 20GB',
+    promotion_start_date: '2024-01-15',
+    promotion_end_date: '2025-02-14',
+    sim_expiry_date: '2025-01-15',
     status: 'active',
     notes: 'เบอร์หลัก',
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   },
   {
     id: '2',
-    number: '082-345-6789',
-    network: 'DTAC',
-    usageCategory: 'ส่วนตัว',
-    package: 'โทรไม่อั้น',
-    monthlyCost: '299',
-    packageStartDate: '2024-12-28',
-    packageExpiryDate: '2025-01-27',
-    simExpiryDate: '2025-12-28',
+    phone_number: '082-345-6789',
+    carrier: 'DTAC',
+    category: 'ส่วนตัว',
+    promotion: 'โทรไม่อั้น',
+    promotion_start_date: '2024-12-28',
+    promotion_end_date: '2025-01-27',
+    sim_expiry_date: '2025-12-28',
     status: 'active',
     notes: 'เบอร์สำรอง',
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   },
   {
     id: '3',
-    number: '083-456-7890',
-    network: 'TRUE',
-    usageCategory: 'ธุรกิจ',
-    package: 'เน็ต 10GB',
-    monthlyCost: '159',
-    packageStartDate: '2024-12-20',
-    packageExpiryDate: '2025-01-19',
-    simExpiryDate: '2025-12-20',
+    phone_number: '083-456-7890',
+    carrier: 'TRUE',
+    category: 'ธุรกิจ',
+    promotion: 'เน็ต 10GB',
+    promotion_start_date: '2024-12-20',
+    promotion_end_date: '2025-01-19',
+    sim_expiry_date: '2025-12-20',
     status: 'active',
     notes: 'เบอร์ธุรกิจ',
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   },
   {
     id: '4',
-    number: '084-567-8901',
-    network: 'NT',
-    usageCategory: 'ส่วนตัว',
-    package: 'เน็ต 5GB',
-    monthlyCost: '99',
-    packageStartDate: '2024-12-25',
-    packageExpiryDate: '2025-01-24',
-    simExpiryDate: '2025-12-25',
+    phone_number: '084-567-8901',
+    carrier: 'NT',
+    category: 'ส่วนตัว',
+    promotion: 'เน็ต 5GB',
+    promotion_start_date: '2024-12-25',
+    promotion_end_date: '2025-01-24',
+    sim_expiry_date: '2025-12-25',
     status: 'active',
     notes: 'เบอร์เก่า',
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   },
   {
     id: '5',
-    number: '085-678-9012',
-    network: 'AIS',
-    usageCategory: 'งาน',
-    package: 'เน็ต 50GB',
-    monthlyCost: '599',
-    packageStartDate: '2024-12-30',
-    packageExpiryDate: '2025-01-29',
-    simExpiryDate: '2025-12-30',
+    phone_number: '085-678-9012',
+    carrier: 'AIS',
+    category: 'งาน',
+    promotion: 'เน็ต 50GB',
+    promotion_start_date: '2024-12-30',
+    promotion_end_date: '2025-01-29',
+    sim_expiry_date: '2025-12-30',
     status: 'active',
     notes: 'เบอร์ใหม่',
-    createdAt: new Date().toISOString()
+    created_at: new Date().toISOString()
   }
 ]
 
@@ -127,8 +122,11 @@ export const usePhones = () => {
         throw fetchError
       }
 
+      console.log('📄 Raw Supabase data:', data)
+
       if (data && data.length > 0) {
-        phones.value = data.map(convertDbToFrontend)
+        // ไม่ต้องแปลง field names แล้ว เพราะใช้ field names เดียวกัน
+        phones.value = data
         console.log('✅ Successfully loaded from Supabase:', phones.value.length, 'phones')
         error.value = null
       } else {
@@ -154,66 +152,42 @@ export const usePhones = () => {
     error.value = null
 
     try {
-      // คำนวณ packageExpiryDate อัตโนมัติ
-      const processedData = {
-        ...phoneData,
-        packageExpiryDate: phoneData.packageStartDate ?
-          getCalculatedExpiryDate(phoneData.packageStartDate) : null
+      console.log('📝 Adding phone with data:', phoneData)
+
+      // ตรวจสอบและทำความสะอาดข้อมูลก่อนส่ง
+      const cleanData = {
+        phone_number: phoneData.phone_number?.trim() || '',
+        carrier: phoneData.carrier || 'AIS',
+        category: phoneData.category?.trim() || null,
+        promotion: phoneData.promotion?.trim() || null,
+        promotion_start_date: phoneData.promotion_start_date || null,
+        promotion_end_date: phoneData.promotion_end_date || null,
+        sim_expiry_date: phoneData.sim_expiry_date || null,
+        notes: phoneData.notes?.trim() || null,
+        status: phoneData.status || 'active'
       }
 
-      // ใช้ข้อมูลตาม database schema ที่ครบถ้วน
-      const insertData = {
-        phone_number: processedData.number,
-        carrier: processedData.network,
-        status: processedData.status || 'active'
-      }
-
-      // เพิ่ม fields อื่นๆ ถ้ามี
-      if (processedData.notes) {
-        insertData.notes = processedData.notes
-      }
-
-      if (processedData.usageCategory) {
-        insertData.usage_category = processedData.usageCategory
-      }
-
-      if (processedData.package) {
-        insertData.package_name = processedData.package
-      }
-
-      if (processedData.monthlyCost) {
-        insertData.monthly_cost = parseFloat(processedData.monthlyCost)
-      }
-
-      if (processedData.packageStartDate) {
-        insertData.package_start_date = processedData.packageStartDate
-      }
-
-      if (processedData.packageExpiryDate) {
-        insertData.package_expiry_date = processedData.packageExpiryDate
-      }
-
-      if (processedData.simExpiryDate) {
-        insertData.sim_expiry_date = processedData.simExpiryDate
-      }
-
-      console.log('🚀 Inserting data to Supabase:', insertData)
+      console.log('🚀 Clean data for Supabase:', cleanData)
 
       const { data, error: insertError } = await $supabase
         .from('phone_numbers')
-        .insert([insertData])
+        .insert([cleanData])
         .select()
 
-      if (insertError) throw insertError
+      if (insertError) {
+        console.error('❌ Insert error:', insertError)
+        throw insertError
+      }
+
+      console.log('✅ Inserted data:', data)
+
       if (data && data.length > 0) {
-        // แปลงข้อมูลกลับเป็นรูปแบบที่ frontend ใช้
-        const newPhone = convertDbToFrontend(data[0])
-        phones.value.unshift(newPhone)
+        phones.value.unshift(data[0])
       }
       return data[0]
     } catch (err) {
-      error.value = err.message
-      console.error('Failed to add phone:', err)
+      console.error('❌ Failed to add phone:', err)
+      error.value = `เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ${err.message}`
       throw err
     } finally {
       loading.value = false
@@ -226,62 +200,45 @@ export const usePhones = () => {
     error.value = null
 
     try {
-      // ใช้ข้อมูลตาม database schema ที่ครบถ้วน
-      const processedUpdates = {
-        phone_number: updates.number,
-        carrier: updates.network,
+      console.log('📝 Updating phone:', id, updates)
+
+      // ตรวจสอบและทำความสะอาดข้อมูลก่อนส่ง
+      const cleanUpdates = {
+        phone_number: updates.phone_number?.trim() || '',
+        carrier: updates.carrier || 'AIS',
+        category: updates.category?.trim() || null,
+        promotion: updates.promotion?.trim() || null,
+        promotion_start_date: updates.promotion_start_date || null,
+        promotion_end_date: updates.promotion_end_date || null,
+        sim_expiry_date: updates.sim_expiry_date || null,
+        notes: updates.notes?.trim() || null,
         status: updates.status || 'active'
       }
 
-      // เพิ่ม fields อื่นๆ ถ้ามี
-      if (updates.notes) {
-        processedUpdates.notes = updates.notes
-      }
-
-      if (updates.usageCategory) {
-        processedUpdates.usage_category = updates.usageCategory
-      }
-
-      if (updates.package) {
-        processedUpdates.package_name = updates.package
-      }
-
-      if (updates.monthlyCost) {
-        processedUpdates.monthly_cost = parseFloat(updates.monthlyCost)
-      }
-
-      if (updates.packageStartDate) {
-        processedUpdates.package_start_date = updates.packageStartDate
-        processedUpdates.package_expiry_date = getCalculatedExpiryDate(updates.packageStartDate)
-      }
-
-      if (updates.packageExpiryDate) {
-        processedUpdates.package_expiry_date = updates.packageExpiryDate
-      }
-
-      if (updates.simExpiryDate) {
-        processedUpdates.sim_expiry_date = updates.simExpiryDate
-      }
-
-      console.log('🔄 Updating data in Supabase:', processedUpdates)
+      console.log('🔄 Clean update data for Supabase:', cleanUpdates)
 
       const { data, error: updateError } = await $supabase
         .from('phone_numbers')
-        .update(processedUpdates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('❌ Update error:', updateError)
+        throw updateError
+      }
+
+      console.log('✅ Updated data:', data)
 
       // อัปเดตข้อมูลใน array
       const index = phones.value.findIndex(phone => phone.id === id)
       if (index !== -1 && data && data.length > 0) {
-        phones.value[index] = convertDbToFrontend(data[0])
+        phones.value[index] = data[0]
       }
       return data[0]
     } catch (err) {
-      error.value = err.message
-      console.error('Failed to update phone:', err)
+      console.error('❌ Failed to update phone:', err)
+      error.value = `เกิดข้อผิดพลาดในการแก้ไขข้อมูล: ${err.message}`
       throw err
     } finally {
       loading.value = false
@@ -294,18 +251,25 @@ export const usePhones = () => {
     error.value = null
 
     try {
+      console.log('🗑️ Deleting phone:', id)
+
       const { error: deleteError } = await $supabase
         .from('phone_numbers')
         .delete()
         .eq('id', id)
 
-      if (deleteError) throw deleteError
+      if (deleteError) {
+        console.error('❌ Delete error:', deleteError)
+        throw deleteError
+      }
+
+      console.log('✅ Phone deleted successfully')
 
       // ลบออกจาก array
       phones.value = phones.value.filter(phone => phone.id !== id)
     } catch (err) {
-      error.value = err.message
-      console.error('Failed to delete phone:', err)
+      console.error('❌ Failed to delete phone:', err)
+      error.value = `เกิดข้อผิดพลาดในการลบข้อมูล: ${err.message}`
       throw err
     } finally {
       loading.value = false
@@ -325,31 +289,13 @@ export const usePhones = () => {
         .order('created_at', { ascending: false })
 
       if (searchError) throw searchError
-      return (data || []).map(convertDbToFrontend)
+      return data || []
     } catch (err) {
       error.value = err.message
       console.error('Search failed:', err)
       throw err
     } finally {
       loading.value = false
-    }
-  }
-
-  // Helper function: แปลงข้อมูลจาก database เป็น frontend format
-  const convertDbToFrontend = (dbRecord) => {
-    return {
-      id: dbRecord.id,
-      number: dbRecord.phone_number || '',
-      network: dbRecord.carrier || '',
-      usageCategory: dbRecord.usage_category || '',
-      package: dbRecord.package_name || '',
-      monthlyCost: dbRecord.monthly_cost || '',
-      packageStartDate: dbRecord.package_start_date || '',
-      packageExpiryDate: dbRecord.package_expiry_date || '',
-      simExpiryDate: dbRecord.sim_expiry_date || '',
-      status: dbRecord.status || 'active',
-      notes: dbRecord.notes || '',
-      createdAt: dbRecord.created_at || new Date().toISOString()
     }
   }
 
@@ -371,7 +317,6 @@ export const usePhones = () => {
     updatePhone,
     deletePhone,
     searchPhones,
-    convertDbToFrontend,
     getCalculatedExpiryDate
   }
 }
