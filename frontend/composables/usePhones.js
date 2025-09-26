@@ -57,27 +57,38 @@ export const usePhones = () => {
           getCalculatedExpiryDate(phoneData.packageStartDate) : null
       }
 
-      // ใช้เฉพาะ fields ที่แน่ใจว่ามีใน database
+      // ใช้ข้อมูลตาม database schema ที่ครบถ้วน
       const insertData = {
         phone_number: processedData.number,
         carrier: processedData.network,
-        status: processedData.status || 'active',
-        notes: processedData.notes || ''
+        status: processedData.status || 'active'
       }
 
-      // เพิ่ม optional fields ทีละตัว
+      // เพิ่ม fields อื่นๆ ถ้ามี
+      if (processedData.notes) {
+        insertData.notes = processedData.notes
+      }
+
       if (processedData.usageCategory) {
         insertData.usage_category = processedData.usageCategory
       }
+
       if (processedData.package) {
         insertData.package_name = processedData.package
       }
+
+      if (processedData.monthlyCost) {
+        insertData.monthly_cost = parseFloat(processedData.monthlyCost)
+      }
+
       if (processedData.packageStartDate) {
         insertData.package_start_date = processedData.packageStartDate
       }
+
       if (processedData.packageExpiryDate) {
         insertData.package_expiry_date = processedData.packageExpiryDate
       }
+
       if (processedData.simExpiryDate) {
         insertData.sim_expiry_date = processedData.simExpiryDate
       }
@@ -111,25 +122,39 @@ export const usePhones = () => {
     error.value = null
 
     try {
-      // ใช้เฉพาะ fields ที่แน่ใจว่ามีใน database
+      // ใช้ข้อมูลตาม database schema ที่ครบถ้วน
       const processedUpdates = {
         phone_number: updates.number,
         carrier: updates.network,
-        status: updates.status || 'active',
-        notes: updates.notes || ''
+        status: updates.status || 'active'
       }
 
-      // เพิ่ม optional fields ทีละตัว
+      // เพิ่ม fields อื่นๆ ถ้ามี
+      if (updates.notes) {
+        processedUpdates.notes = updates.notes
+      }
+
       if (updates.usageCategory) {
         processedUpdates.usage_category = updates.usageCategory
       }
+
       if (updates.package) {
         processedUpdates.package_name = updates.package
       }
+
+      if (updates.monthlyCost) {
+        processedUpdates.monthly_cost = parseFloat(updates.monthlyCost)
+      }
+
       if (updates.packageStartDate) {
         processedUpdates.package_start_date = updates.packageStartDate
         processedUpdates.package_expiry_date = getCalculatedExpiryDate(updates.packageStartDate)
       }
+
+      if (updates.packageExpiryDate) {
+        processedUpdates.package_expiry_date = updates.packageExpiryDate
+      }
+
       if (updates.simExpiryDate) {
         processedUpdates.sim_expiry_date = updates.simExpiryDate
       }
@@ -192,7 +217,7 @@ export const usePhones = () => {
       const { data, error: searchError } = await $supabase
         .from('phone_numbers')
         .select('*')
-        .or(`phone_number.ilike.%${query}%,carrier.ilike.%${query}%,usage_category.ilike.%${query}%,package_name.ilike.%${query}%`)
+        .or(`phone_number.ilike.%${query}%,carrier.ilike.%${query}%`)
         .order('created_at', { ascending: false })
 
       if (searchError) throw searchError
@@ -214,7 +239,7 @@ export const usePhones = () => {
       network: dbRecord.carrier || '',
       usageCategory: dbRecord.usage_category || '',
       package: dbRecord.package_name || '',
-      // monthlyCost: 0, // Completely removed
+      monthlyCost: dbRecord.monthly_cost || '',
       packageStartDate: dbRecord.package_start_date || '',
       packageExpiryDate: dbRecord.package_expiry_date || '',
       simExpiryDate: dbRecord.sim_expiry_date || '',

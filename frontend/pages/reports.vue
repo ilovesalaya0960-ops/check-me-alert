@@ -183,9 +183,17 @@ const expiringPhones = computed(() => {
   }).length
 })
 
-const totalMonthlyCost = computed(() => 0) // Temporarily disabled
+const totalMonthlyCost = computed(() => {
+  return phones.value
+    .filter(phone => phone.status === 'active')
+    .reduce((sum, phone) => sum + (parseFloat(phone.monthlyCost) || 0), 0)
+})
 
-const averageCost = computed(() => 0) // Temporarily disabled
+const averageCost = computed(() => {
+  const activePhones = phones.value.filter(phone => phone.status === 'active')
+  if (activePhones.length === 0) return 0
+  return totalMonthlyCost.value / activePhones.length
+})
 
 const networkStats = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
@@ -211,7 +219,9 @@ const networkCosts = computed(() => {
   const networks = ['AIS', 'DTAC', 'TRUE', 'NT']
   return networks.map(network => ({
     name: network,
-    cost: 0 // Temporarily disabled cost calculation
+    cost: phones.value
+      .filter(phone => phone.network === network && phone.status === 'active')
+      .reduce((sum, phone) => sum + (parseFloat(phone.monthlyCost) || 0), 0)
   })).filter(item => item.cost > 0)
 })
 

@@ -136,8 +136,10 @@ const expiringPhones = computed(() => {
 })
 
 const totalCost = computed(() => {
-  // Temporarily disable cost calculation
-  return '0 ฿'
+  const total = phones.value
+    .filter(phone => phone.status === 'active')
+    .reduce((sum, phone) => sum + (parseFloat(phone.monthlyCost) || 0), 0)
+  return `${total.toLocaleString('th-TH')} ฿`
 })
 
 // Generate recent activities from real data

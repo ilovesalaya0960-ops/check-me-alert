@@ -57,12 +57,12 @@
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน (ยังไม่สามารถใช้งานได้)</label>
+              <label>ค่าใช้จ่าย/เดือน (บาท)</label>
               <input
+                v-model="newPhone.monthlyCost"
                 type="number"
-                placeholder="0"
-                disabled
-                value="0"
+                step="0.01"
+                placeholder="299"
               />
             </div>
             <div class="form-group">
@@ -285,12 +285,12 @@
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน (ยังไม่สามารถใช้งานได้)</label>
+              <label>ค่าใช้จ่าย/เดือน (บาท)</label>
               <input
+                v-model="editingPhone.monthlyCost"
                 type="number"
-                placeholder="0"
-                disabled
-                value="0"
+                step="0.01"
+                placeholder="299"
               />
             </div>
             <div class="form-group">
@@ -360,7 +360,7 @@ const newPhone = ref({
   network: '',
   usageCategory: '',
   package: '',
-  // monthlyCost: '', // Temporarily disabled
+  monthlyCost: '',
   packageStartDate: '',
   simExpiryDate: '',
   status: 'active',
@@ -499,7 +499,7 @@ const handleAddPhone = async () => {
       network: '',
       usageCategory: '',
       package: '',
-      // monthlyCost: '', // Temporarily disabled
+      monthlyCost: '',
       packageStartDate: '',
       simExpiryDate: '',
       status: 'active',
