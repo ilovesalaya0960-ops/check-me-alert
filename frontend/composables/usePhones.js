@@ -1,3 +1,77 @@
+// Mock data สำหรับกรณีที่ Supabase ไม่พร้อม
+const getMockData = () => [
+  {
+    id: '1',
+    number: '081-234-5678',
+    network: 'AIS',
+    usageCategory: 'งาน',
+    package: 'เน็ต 20GB',
+    monthlyCost: '399',
+    packageStartDate: '2024-01-15',
+    packageExpiryDate: '2025-02-14',
+    simExpiryDate: '2025-01-15',
+    status: 'active',
+    notes: 'เบอร์หลัก',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    number: '082-345-6789',
+    network: 'DTAC',
+    usageCategory: 'ส่วนตัว',
+    package: 'โทรไม่อั้น',
+    monthlyCost: '299',
+    packageStartDate: '2024-12-28',
+    packageExpiryDate: '2025-01-27',
+    simExpiryDate: '2025-12-28',
+    status: 'active',
+    notes: 'เบอร์สำรอง',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    number: '083-456-7890',
+    network: 'TRUE',
+    usageCategory: 'ธุรกิจ',
+    package: 'เน็ต 10GB',
+    monthlyCost: '159',
+    packageStartDate: '2024-12-20',
+    packageExpiryDate: '2025-01-19',
+    simExpiryDate: '2025-12-20',
+    status: 'active',
+    notes: 'เบอร์ธุรกิจ',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    number: '084-567-8901',
+    network: 'NT',
+    usageCategory: 'ส่วนตัว',
+    package: 'เน็ต 5GB',
+    monthlyCost: '99',
+    packageStartDate: '2024-12-25',
+    packageExpiryDate: '2025-01-24',
+    simExpiryDate: '2025-12-25',
+    status: 'active',
+    notes: 'เบอร์เก่า',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '5',
+    number: '085-678-9012',
+    network: 'AIS',
+    usageCategory: 'งาน',
+    package: 'เน็ต 50GB',
+    monthlyCost: '599',
+    packageStartDate: '2024-12-30',
+    packageExpiryDate: '2025-01-29',
+    simExpiryDate: '2025-12-30',
+    status: 'active',
+    notes: 'เบอร์ใหม่',
+    createdAt: new Date().toISOString()
+  }
+]
+
 export const usePhones = () => {
   const { $supabase } = useNuxtApp()
 
@@ -7,13 +81,25 @@ export const usePhones = () => {
 
   // Check if Supabase is available
   if (!$supabase) {
-    error.value = 'Supabase not initialized'
-    console.error('Supabase client not available')
+    console.warn('Supabase not available, using mock data')
+
+    // Return mock functions ที่ใช้ localStorage แทน
     return {
       phones: readonly(phones),
       loading: readonly(loading),
       error: readonly(error),
-      fetchPhones: () => Promise.resolve([]),
+      fetchPhones: async () => {
+        loading.value = true
+        try {
+          // ใช้ mock data
+          phones.value = getMockData()
+          console.log('✅ Loaded mock data:', phones.value.length, 'phones')
+        } catch (err) {
+          error.value = 'Failed to load mock data'
+        } finally {
+          loading.value = false
+        }
+      },
       addPhone: () => Promise.resolve(null),
       updatePhone: () => Promise.resolve(null),
       deletePhone: () => Promise.resolve(),
@@ -36,9 +122,13 @@ export const usePhones = () => {
 
       if (fetchError) throw fetchError
       phones.value = (data || []).map(convertDbToFrontend)
+      console.log('✅ Loaded from Supabase:', phones.value.length, 'phones')
     } catch (err) {
-      error.value = err.message
-      console.error('Failed to fetch phones:', err)
+      console.warn('Supabase fetch failed, using mock data:', err.message)
+
+      // Fallback to mock data เมื่อ Supabase ล้มเหลว
+      phones.value = getMockData()
+      error.value = 'ใช้ข้อมูลตัวอย่าง (Supabase connection failed)'
     } finally {
       loading.value = false
     }

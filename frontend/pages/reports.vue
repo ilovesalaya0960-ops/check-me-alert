@@ -14,8 +14,22 @@
       <NuxtLink to="/settings" class="nav-link">⚙️ ตั้งค่า</NuxtLink>
     </nav>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-section">
+      <div class="loading-spinner">📊</div>
+      <p>กำลังโหลดข้อมูลรายงาน...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="error-section">
+      <div class="error-icon">❌</div>
+      <h3>เกิดข้อผิดพลาด</h3>
+      <p>{{ error }}</p>
+      <button @click="fetchPhones()" class="retry-button">ลองใหม่</button>
+    </div>
+
     <!-- Main Content -->
-    <main class="main-content">
+    <main v-else class="main-content">
       <!-- Summary Cards -->
       <section class="summary-cards">
         <div class="card">
@@ -115,17 +129,21 @@
       </section>
 
       <!-- Expiring Phones Alert -->
-      <section v-if="expiringPhonesList.length > 0" class="alert-section">
-        <h2>🚨 เบอร์ที่ใกล้หมดอายุ</h2>
+      <section class="alert-section">
+        <h2>🚨 เบอร์ที่ใกล้หมดอายุ (7 วันข้างหน้า)</h2>
         <div class="expiring-list">
+          <div v-if="expiringPhonesList.length === 0" class="no-expiring">
+            <p>🎉 ไม่มีเบอร์ที่ใกล้หมดอายุใน 7 วันข้างหน้า</p>
+          </div>
           <div v-for="phone in expiringPhonesList" :key="phone.id" class="expiring-item">
             <div class="phone-info">
               <h4>{{ phone.number }}</h4>
-              <p>{{ phone.network }} - {{ phone.package }}</p>
+              <p>{{ phone.network }}{{ phone.package ? ' - ' + phone.package : '' }}</p>
+              <small class="expiry-type">{{ phone.expiryType }}หมดอายุ</small>
             </div>
             <div class="expiry-info">
-              <span class="days-left">{{ getDaysLeft(phone.expiryDate) }} วัน</span>
-              <span class="expiry-date">{{ formatDate(phone.expiryDate) }}</span>
+              <span class="days-left">{{ getDaysLeft(phone.earliestExpiryDate) }} วัน</span>
+              <span class="expiry-date">{{ formatDate(phone.earliestExpiryDate) }}</span>
             </div>
           </div>
         </div>
@@ -153,20 +171,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
-const phones = ref([])
+// Use Supabase for data management
+const { phones, loading, error, fetchPhones } = usePhones()
 
-onMounted(() => {
-  loadPhones()
+onMounted(async () => {
+  console.log('📊 Loading reports data...')
+  await fetchPhones()
+  console.log('📊 Reports data loaded:', phones.value.length, 'phones')
 })
-
-const loadPhones = () => {
-  const savedPhones = localStorage.getItem('phoneNumbers')
-  if (savedPhones) {
-    phones.value = JSON.parse(savedPhones)
-  } else {
-    phones.value = []
-  }
-}
 
 const totalPhones = computed(() => phones.value.length)
 
@@ -178,8 +190,16 @@ const expiringPhones = computed(() => {
   const today = new Date()
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   return phones.value.filter(phone => {
-    const expiryDate = new Date(phone.expiryDate)
-    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+    if (phone.status !== 'active') return false
+
+    // Check both package expiry and SIM expiry
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
+
+    return packageExpiring || simExpiring
   }).length
 })
 
@@ -229,8 +249,45 @@ const expiringPhonesList = computed(() => {
   const today = new Date()
   const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
   return phones.value.filter(phone => {
-    const expiryDate = new Date(phone.expiryDate)
-    return expiryDate <= nextWeek && expiryDate >= today && phone.status === 'active'
+    if (phone.status !== 'active') return false
+
+    // Check both package expiry and SIM expiry
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    const packageExpiring = packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today
+    const simExpiring = simExpiry && simExpiry <= nextWeek && simExpiry >= today
+
+    return packageExpiring || simExpiring
+  }).map(phone => {
+    // Add expiry info for display
+    const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+    const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+
+    let earliestExpiry = null
+    let expiryType = ''
+
+    if (packageExpiry && simExpiry) {
+      if (packageExpiry <= simExpiry) {
+        earliestExpiry = packageExpiry
+        expiryType = 'โปรโมชั่น'
+      } else {
+        earliestExpiry = simExpiry
+        expiryType = 'ซิม'
+      }
+    } else if (packageExpiry) {
+      earliestExpiry = packageExpiry
+      expiryType = 'โปรโมชั่น'
+    } else if (simExpiry) {
+      earliestExpiry = simExpiry
+      expiryType = 'ซิม'
+    }
+
+    return {
+      ...phone,
+      earliestExpiryDate: earliestExpiry,
+      expiryType: expiryType
+    }
   })
 })
 
@@ -685,6 +742,63 @@ useHead({
 
 .export-button.print:hover {
   background: #8e44ad;
+}
+
+/* Loading and Error States */
+.loading-section, .error-section {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  margin: 20px 0;
+}
+
+.loading-spinner {
+  font-size: 4em;
+  margin-bottom: 20px;
+  animation: pulse 2s infinite;
+}
+
+.error-icon {
+  font-size: 4em;
+  margin-bottom: 20px;
+}
+
+.retry-button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background 0.3s ease;
+}
+
+.retry-button:hover {
+  background: #2980b9;
+}
+
+.no-expiring {
+  text-align: center;
+  padding: 40px 20px;
+  color: #27ae60;
+  font-weight: 500;
+}
+
+.expiry-type {
+  color: #e74c3c;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8em;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 @media (max-width: 768px) {
