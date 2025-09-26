@@ -115,20 +115,34 @@ export const usePhones = () => {
     error.value = null
 
     try {
+      console.log('🔄 Attempting to connect to Supabase...')
+
       const { data, error: fetchError } = await $supabase
         .from('phone_numbers')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (fetchError) throw fetchError
-      phones.value = (data || []).map(convertDbToFrontend)
-      console.log('✅ Loaded from Supabase:', phones.value.length, 'phones')
+      if (fetchError) {
+        console.error('❌ Supabase query error:', fetchError)
+        throw fetchError
+      }
+
+      if (data && data.length > 0) {
+        phones.value = data.map(convertDbToFrontend)
+        console.log('✅ Successfully loaded from Supabase:', phones.value.length, 'phones')
+        error.value = null
+      } else {
+        console.warn('⚠️ Supabase returned empty data, using mock data')
+        phones.value = getMockData()
+        error.value = 'ไม่มีข้อมูลใน database - ใช้ข้อมูลตัวอย่าง'
+      }
     } catch (err) {
-      console.warn('Supabase fetch failed, using mock data:', err.message)
+      console.warn('❌ Supabase connection failed:', err.message)
+      console.log('🔄 Falling back to mock data...')
 
       // Fallback to mock data เมื่อ Supabase ล้มเหลว
       phones.value = getMockData()
-      error.value = 'ใช้ข้อมูลตัวอย่าง (Supabase connection failed)'
+      error.value = `ใช้ข้อมูลตัวอย่าง - ${err.message}`
     } finally {
       loading.value = false
     }
