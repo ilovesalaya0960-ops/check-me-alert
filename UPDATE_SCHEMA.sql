@@ -1,4 +1,8 @@
--- ลบตาราง phone_numbers เดิมถ้ามี
+-- สคริปต์สำหรับอัปเดต database schema ใน production
+-- รันไฟล์นี้ใน Supabase SQL Editor
+
+-- ลบตาราง phone_numbers เดิมและ dependencies
+DROP VIEW IF EXISTS expiring_phones;
 DROP TABLE IF EXISTS phone_numbers CASCADE;
 
 -- สร้างตาราง phone_numbers ใหม่ให้ตรงกับโค้ด Frontend
@@ -64,7 +68,7 @@ INSERT INTO phone_numbers (
   '2024-12-20', '2025-01-19', '2025-12-20', 'active', 'เบอร์ธุรกิจ'
 );
 
--- View สำหรับดูข้อมูลที่ใกล้หมดอายุ
+-- สร้าง View สำหรับดูข้อมูลที่ใกล้หมดอายุ
 CREATE VIEW expiring_phones AS
 SELECT *,
   CASE
@@ -81,3 +85,7 @@ ORDER BY
     COALESCE(package_expiry_date, '9999-12-31'::date),
     COALESCE(sim_expiry_date, '9999-12-31'::date)
   ) ASC;
+
+-- ตรวจสอบว่าสร้างสำเร็จ
+SELECT 'Schema updated successfully!' as status;
+SELECT COUNT(*) as total_phones FROM phone_numbers;

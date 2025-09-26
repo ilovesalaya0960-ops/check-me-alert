@@ -35,7 +35,7 @@ export const usePhones = () => {
         .order('created_at', { ascending: false })
 
       if (fetchError) throw fetchError
-      phones.value = data || []
+      phones.value = (data || []).map(convertDbToFrontend)
     } catch (err) {
       error.value = err.message
       console.error('Failed to fetch phones:', err)

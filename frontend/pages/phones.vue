@@ -189,7 +189,10 @@
                   {{ phone.package || '-' }}
                 </td>
                 <td class="cost">
-                  <span class="no-cost">-</span>
+                  <span v-if="phone.monthlyCost" class="cost-amount">
+                    {{ formatCurrency(phone.monthlyCost) }}
+                  </span>
+                  <span v-else class="no-cost">-</span>
                 </td>
                 <td class="package-start">
                   <span v-if="phone.packageStartDate">
@@ -611,6 +614,11 @@ const formatDate = (dateString) => {
     month: 'long',
     day: 'numeric'
   })
+}
+
+const formatCurrency = (amount) => {
+  if (!amount) return '0'
+  return parseFloat(amount).toLocaleString('th-TH') + ' ฿'
 }
 
 const getPackageExpiryClass = (expiryDate, status) => {

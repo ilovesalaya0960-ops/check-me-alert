@@ -170,6 +170,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+// Use Supabase for data management
+const { phones, loading, error, fetchPhones } = usePhones()
+
 const settings = ref({
   expiryNotifications: true,
   notificationDays: 7,
@@ -177,11 +180,9 @@ const settings = ref({
   itemsPerPage: 20
 })
 
-const phones = ref([])
-
-onMounted(() => {
+onMounted(async () => {
   loadSettings()
-  loadPhones()
+  await fetchPhones()
 })
 
 const loadSettings = () => {
@@ -231,39 +232,36 @@ const applyTheme = (theme) => {
   }
 }
 
-const loadPhones = () => {
-  const savedPhones = localStorage.getItem('phoneNumbers')
-  if (savedPhones) {
-    phones.value = JSON.parse(savedPhones)
-  }
-}
+// Phone data now comes from Supabase via usePhones composable
 
 const phoneCount = computed(() => phones.value.length)
 
 const dataSize = computed(() => {
-  const data = localStorage.getItem('phoneNumbers') || '[]'
+  const data = JSON.stringify(phones.value)
   return Math.round(new Blob([data]).size / 1024)
 })
 
 const lastUpdate = computed(() => {
-  const phones = localStorage.getItem('phoneNumbers')
-  if (phones) {
-    const parsed = JSON.parse(phones)
-    if (parsed.length > 0) {
-      const lastPhone = parsed.reduce((latest, phone) =>
-        new Date(phone.createdAt || 0) > new Date(latest.createdAt || 0) ? phone : latest
-      )
-      return new Date(lastPhone.createdAt || Date.now()).toLocaleDateString('th-TH')
-    }
+  if (phones.value.length > 0) {
+    const lastPhone = phones.value.reduce((latest, phone) =>
+      new Date(phone.createdAt || 0) > new Date(latest.createdAt || 0) ? phone : latest
+    )
+    return new Date(lastPhone.createdAt || Date.now()).toLocaleDateString('th-TH')
   }
   return 'ไม่มีข้อมูล'
 })
 
-const backupData = () => {
+const backupData = async () => {
+  // รอให้ข้อมูลโหลดเสร็จก่อน
+  if (loading.value) {
+    await fetchPhones()
+  }
+
   const data = {
     phones: phones.value,
     settings: settings.value,
-    exportDate: new Date().toISOString()
+    exportDate: new Date().toISOString(),
+    version: '2.0' // อัปเดตเวอร์ชัน
   }
 
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -277,27 +275,34 @@ const backupData = () => {
   showNotification('สำรองข้อมูลสำเร็จ')
 }
 
-const importData = (event) => {
+const importData = async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const data = JSON.parse(e.target.result)
 
-      if (data.phones) {
-        localStorage.setItem('phoneNumbers', JSON.stringify(data.phones))
-        phones.value = data.phones
+      if (data.phones && Array.isArray(data.phones)) {
+        const confirmImport = confirm(
+          `คุณต้องการนำเข้าข้อมูล ${data.phones.length} เบอร์หรือไม่?\n` +
+          `ข้อมูลปัจจุบันจะถูกเขียนทับ`
+        )
+
+        if (confirmImport) {
+          // Import ข้อมูลไปยัง Supabase (ต้องพัฒนาฟีเจอร์นี้ในอนาคต)
+          showNotification('การนำเข้าข้อมูลไปยัง Supabase ยังไม่พร้อมใช้งาน กรุณาใช้การเพิ่มเบอร์ทีละรายการ', 'error')
+        }
       }
 
       if (data.settings) {
         localStorage.setItem('phoneSettings', JSON.stringify(data.settings))
         settings.value = { ...settings.value, ...data.settings }
         applyTheme(settings.value.theme)
+        showNotification('นำเข้าการตั้งค่าสำเร็จ')
       }
 
-      showNotification('นำเข้าข้อมูลสำเร็จ')
     } catch (error) {
       showNotification('ไฟล์ข้อมูลไม่ถูกต้อง', 'error')
     }
@@ -305,23 +310,38 @@ const importData = (event) => {
   reader.readAsText(file)
 }
 
-const clearAllData = () => {
-  const confirmMessage = 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมด?\nการกระทำนี้ไม่สามารถยกเลิกได้'
+const clearAllData = async () => {
+  const confirmMessage = 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลเบอร์ทั้งหมดจาก Supabase?\nการกระทำนี้ไม่สามารถยกเลิกได้'
 
   if (confirm(confirmMessage)) {
-    const doubleConfirm = confirm('ยืนยันอีกครั้ง: ลบข้อมูลทั้งหมดหรือไม่?')
+    const doubleConfirm = confirm('ยืนยันอีกครั้ง: ลบข้อมูลเบอร์ทั้งหมดจาก Supabase หรือไม่?')
     if (doubleConfirm) {
-      localStorage.removeItem('phoneNumbers')
-      localStorage.removeItem('phoneSettings')
-      phones.value = []
-      settings.value = {
-        expiryNotifications: true,
-        notificationDays: 7,
-        theme: 'default',
-        itemsPerPage: 20
+      try {
+        const { $supabase } = useNuxtApp()
+
+        // ลบข้อมูลทั้งหมดจาก Supabase
+        const { error: deleteError } = await $supabase
+          .from('phone_numbers')
+          .delete()
+          .gte('id', '00000000-0000-0000-0000-000000000000') // ลบทั้งหมด
+
+        if (deleteError) throw deleteError
+
+        // รีเซ็ตการตั้งค่า
+        localStorage.removeItem('phoneSettings')
+        phones.value = []
+        settings.value = {
+          expiryNotifications: true,
+          notificationDays: 7,
+          theme: 'default',
+          itemsPerPage: 20
+        }
+        applyTheme('default')
+        showNotification('ลบข้อมูลทั้งหมดเรียบร้อย')
+      } catch (error) {
+        console.error('Failed to clear data:', error)
+        showNotification('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message, 'error')
       }
-      applyTheme('default')
-      showNotification('ลบข้อมูลทั้งหมดเรียบร้อย')
     }
   }
 }
