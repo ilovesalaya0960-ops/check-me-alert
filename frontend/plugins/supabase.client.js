@@ -12,15 +12,26 @@ export default defineNuxtPlugin(() => {
   console.log('🔧 Supabase URL:', supabaseUrl || 'MISSING')
   console.log('🔧 Supabase Key:', supabaseKey ? 'Key loaded ✅' : 'Key missing ❌')
 
-  // Hard-coded fallback for production (temporary)
-  if (!supabaseUrl || supabaseUrl === 'undefined') {
+  // Hard-coded fallback for production (force override)
+  if (!supabaseUrl || supabaseUrl === 'undefined' || supabaseUrl === '' || supabaseUrl === null) {
     supabaseUrl = 'https://shglsckgjpfjqbvythzz.supabase.co'
     console.log('🔄 Using fallback URL:', supabaseUrl)
   }
 
-  if (!supabaseKey || supabaseKey === 'undefined') {
+  if (!supabaseKey || supabaseKey === 'undefined' || supabaseKey === '' || supabaseKey === null) {
     supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoZ2xzY2tnanBmanFidnl0aHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODQ4NzcsImV4cCI6MjA3NDM2MDg3N30.lRh2BCMvL68KCmNp4ZvXutIWFtGsYpLv8rcjlEhDWsQ'
     console.log('🔄 Using fallback Key')
+  }
+
+  // Force override if still empty after config loading
+  if (!supabaseUrl) {
+    supabaseUrl = 'https://shglsckgjpfjqbvythzz.supabase.co'
+    console.log('🔄 Force override URL:', supabaseUrl)
+  }
+
+  if (!supabaseKey) {
+    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoZ2xzY2tnanBmanFidnl0aHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODQ4NzcsImV4cCI6MjA3NDM2MDg3N30.lRh2BCMvL68KCmNp4ZvXutIWFtGsYpLv8rcjlEhDWsQ'
+    console.log('🔄 Force override Key')
   }
 
   // Final check
