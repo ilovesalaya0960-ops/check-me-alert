@@ -24,7 +24,7 @@
             <div class="form-group">
               <label>เบอร์โทรศัพท์</label>
               <input
-                v-model="newPhone.number"
+                v-model="newPhone.phone_number"
                 type="text"
                 placeholder="081-234-5678"
                 required
@@ -32,7 +32,7 @@
             </div>
             <div class="form-group">
               <label>ค่ายเครือข่าย</label>
-              <select v-model="newPhone.network" required>
+              <select v-model="newPhone.carrier" required>
                 <option value="">เลือกค่าย</option>
                 <option value="AIS">AIS</option>
                 <option value="DTAC">DTAC</option>
@@ -43,7 +43,7 @@
             <div class="form-group">
               <label>หมวดหมู่ใช้งาน</label>
               <input
-                v-model="newPhone.usageCategory"
+                v-model="newPhone.category"
                 type="text"
                 placeholder="เช่น งาน, ส่วนตัว, ธุรกิจ"
               />
@@ -51,41 +51,29 @@
             <div class="form-group">
               <label>แพ็กเกจ</label>
               <input
-                v-model="newPhone.package"
+                v-model="newPhone.promotion"
                 type="text"
                 placeholder="เน็ตไม่อั้น 30 วัน"
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน (บาท)</label>
+              <label>วันที่สมัครโปร</label>
               <input
-                v-model="newPhone.monthlyCost"
-                type="number"
-                step="0.01"
-                placeholder="299"
+                v-model="newPhone.promotion_start_date"
+                type="date"
               />
             </div>
             <div class="form-group">
-              <label>วันที่สมัครโปร</label>
+              <label>วันที่โปรหมดอายุ</label>
               <input
-                v-model="newPhone.packageStartDate"
+                v-model="newPhone.promotion_end_date"
                 type="date"
-                @change="calculatePackageExpiry"
-              />
-            </div>
-            <div class="form-group" v-if="newPhone.packageStartDate">
-              <label>วันที่โปรหมดอายุ (คำนวณอัตโนมัติ)</label>
-              <input
-                :value="getCalculatedExpiryDate(newPhone.packageStartDate)"
-                type="date"
-                readonly
-                class="readonly-field"
               />
             </div>
             <div class="form-group">
               <label>วันที่ซิมหมดอายุ</label>
               <input
-                v-model="newPhone.simExpiryDate"
+                v-model="newPhone.sim_expiry_date"
                 type="date"
                 required
               />
@@ -160,7 +148,6 @@
                 <th>ค่าย</th>
                 <th>หมวดหมู่ใช้งาน</th>
                 <th>แพ็กเกจ</th>
-                <th>ค่าใช้จ่าย/เดือน</th>
                 <th>วันที่สมัครโปร</th>
                 <th>วันที่โปรหมดอายุ</th>
                 <th>วันที่ซิมหมดอายุ</th>
@@ -172,43 +159,40 @@
             <tbody>
               <tr v-for="phone in filteredPhones" :key="phone.id" class="phone-row">
                 <td class="phone-number">
-                  <strong>{{ phone.number }}</strong>
+                  <strong>{{ phone.phone_number }}</strong>
                 </td>
                 <td class="network">
-                  <span class="network-badge" :class="phone.network.toLowerCase()">
-                    {{ phone.network }}
+                  <span class="network-badge" :class="phone.carrier.toLowerCase()">
+                    {{ phone.carrier }}
                   </span>
                 </td>
                 <td class="usage-category">
-                  <span v-if="phone.usageCategory" class="category-tag">
-                    {{ phone.usageCategory }}
+                  <span v-if="phone.category" class="category-tag">
+                    {{ phone.category }}
                   </span>
                   <span v-else class="no-category">-</span>
                 </td>
                 <td class="package">
-                  {{ phone.package || '-' }}
+                  {{ phone.promotion || '-' }}
                 </td>
                 <td class="cost">
-                  <span v-if="phone.monthlyCost" class="cost-amount">
-                    {{ formatCurrency(phone.monthlyCost) }}
-                  </span>
-                  <span v-else class="no-cost">-</span>
+                  <span class="no-cost">-</span>
                 </td>
                 <td class="package-start">
-                  <span v-if="phone.packageStartDate">
-                    {{ formatDate(phone.packageStartDate) }}
+                  <span v-if="phone.promotion_start_date">
+                    {{ formatDate(phone.promotion_start_date) }}
                   </span>
                   <span v-else class="no-date">-</span>
                 </td>
                 <td class="package-expiry">
-                  <span v-if="phone.packageExpiryDate" :class="getPackageExpiryClass(phone.packageExpiryDate, phone.status)">
-                    {{ formatDate(phone.packageExpiryDate) }}
+                  <span v-if="phone.promotion_end_date" :class="getPackageExpiryClass(phone.promotion_end_date, phone.status)">
+                    {{ formatDate(phone.promotion_end_date) }}
                   </span>
                   <span v-else class="no-date">-</span>
                 </td>
                 <td class="sim-expiry">
-                  <span :class="getSimExpiryClass(phone.simExpiryDate, phone.status)">
-                    {{ formatDate(phone.simExpiryDate) }}
+                  <span :class="getSimExpiryClass(phone.sim_expiry_date, phone.status)">
+                    {{ formatDate(phone.sim_expiry_date) }}
                   </span>
                 </td>
                 <td class="status">
@@ -255,7 +239,7 @@
             <div class="form-group">
               <label>เบอร์โทรศัพท์</label>
               <input
-                v-model="editingPhone.number"
+                v-model="editingPhone.phone_number"
                 type="text"
                 placeholder="081-234-5678"
                 required
@@ -263,7 +247,7 @@
             </div>
             <div class="form-group">
               <label>ค่ายเครือข่าย</label>
-              <select v-model="editingPhone.network" required>
+              <select v-model="editingPhone.carrier" required>
                 <option value="">เลือกค่าย</option>
                 <option value="AIS">AIS</option>
                 <option value="DTAC">DTAC</option>
@@ -274,7 +258,7 @@
             <div class="form-group">
               <label>หมวดหมู่ใช้งาน</label>
               <input
-                v-model="editingPhone.usageCategory"
+                v-model="editingPhone.category"
                 type="text"
                 placeholder="เช่น งาน, ส่วนตัว, ธุรกิจ"
               />
@@ -282,41 +266,29 @@
             <div class="form-group">
               <label>แพ็กเกจ</label>
               <input
-                v-model="editingPhone.package"
+                v-model="editingPhone.promotion"
                 type="text"
                 placeholder="เน็ตไม่อั้น 30 วัน"
               />
             </div>
             <div class="form-group">
-              <label>ค่าใช้จ่าย/เดือน (บาท)</label>
+              <label>วันที่สมัครโปร</label>
               <input
-                v-model="editingPhone.monthlyCost"
-                type="number"
-                step="0.01"
-                placeholder="299"
+                v-model="editingPhone.promotion_start_date"
+                type="date"
               />
             </div>
             <div class="form-group">
-              <label>วันที่สมัครโปร</label>
+              <label>วันที่โปรหมดอายุ</label>
               <input
-                v-model="editingPhone.packageStartDate"
+                v-model="editingPhone.promotion_end_date"
                 type="date"
-                @change="calculateEditPackageExpiry"
-              />
-            </div>
-            <div class="form-group" v-if="editingPhone.packageStartDate">
-              <label>วันที่โปรหมดอายุ (คำนวณอัตโนมัติ)</label>
-              <input
-                :value="getCalculatedExpiryDate(editingPhone.packageStartDate)"
-                type="date"
-                readonly
-                class="readonly-field"
               />
             </div>
             <div class="form-group">
               <label>วันที่ซิมหมดอายุ</label>
               <input
-                v-model="editingPhone.simExpiryDate"
+                v-model="editingPhone.sim_expiry_date"
                 type="date"
                 required
               />
@@ -359,13 +331,13 @@ import { ref, computed, onMounted } from 'vue'
 const { phones, loading, error, fetchPhones, addPhone, updatePhone, deletePhone, searchPhones } = usePhones()
 
 const newPhone = ref({
-  number: '',
-  network: '',
-  usageCategory: '',
-  package: '',
-  monthlyCost: '',
-  packageStartDate: '',
-  simExpiryDate: '',
+  phone_number: '',
+  carrier: '',
+  category: '',
+  promotion: '',
+  promotion_start_date: '',
+  promotion_end_date: '',
+  sim_expiry_date: '',
   status: 'active',
   notes: ''
 })
@@ -400,21 +372,6 @@ const handleQueryFilter = (filter) => {
   }
 }
 
-const getCalculatedExpiryDate = (startDate) => {
-  if (!startDate) return ''
-  const start = new Date(startDate)
-  const expiry = new Date(start)
-  expiry.setDate(start.getDate() + 30)
-  return expiry.toISOString().split('T')[0]
-}
-
-const calculatePackageExpiry = () => {
-  // This will trigger reactivity for the readonly field display
-}
-
-const calculateEditPackageExpiry = () => {
-  // This will trigger reactivity for the readonly field display
-}
 
 // Export Data Function
 const exportData = () => {
@@ -461,8 +418,7 @@ const importData = (event) => {
           phones.value = importedData.phones.map(phone => ({
             ...phone,
             // Ensure required fields exist
-            id: phone.id || Date.now() + Math.random(),
-            packageExpiryDate: phone.packageStartDate ? getCalculatedExpiryDate(phone.packageStartDate) : phone.packageExpiryDate
+            id: phone.id || Date.now() + Math.random()
           }))
 
           savePhones()
@@ -484,7 +440,7 @@ const importData = (event) => {
 const handleAddPhone = async () => {
   console.log('📝 Form data:', newPhone.value)
 
-  if (!newPhone.value.number || !newPhone.value.network || !newPhone.value.simExpiryDate) {
+  if (!newPhone.value.phone_number || !newPhone.value.carrier || !newPhone.value.sim_expiry_date) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
@@ -498,13 +454,13 @@ const handleAddPhone = async () => {
 
     // Reset form
     newPhone.value = {
-      number: '',
-      network: '',
-      usageCategory: '',
-      package: '',
-      monthlyCost: '',
-      packageStartDate: '',
-      simExpiryDate: '',
+      phone_number: '',
+      carrier: '',
+      category: '',
+      promotion: '',
+      promotion_start_date: '',
+      promotion_end_date: '',
+      sim_expiry_date: '',
       status: 'active',
       notes: ''
     }
@@ -522,7 +478,7 @@ const editPhone = (phone) => {
 }
 
 const handleUpdatePhone = async () => {
-  if (!editingPhone.value.number || !editingPhone.value.network || !editingPhone.value.simExpiryDate) {
+  if (!editingPhone.value.phone_number || !editingPhone.value.carrier || !editingPhone.value.sim_expiry_date) {
     alert('กรุณากรอกข้อมูลที่จำเป็น')
     return
   }
@@ -563,7 +519,7 @@ const filteredPhones = computed(() => {
       const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
       result = result.filter(phone => {
         // Check only package expiry
-        const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
+        const packageExpiry = phone.promotion_end_date ? new Date(phone.promotion_end_date) : null
         return packageExpiry && packageExpiry <= nextWeek && packageExpiry >= today && phone.status === 'active'
       })
     } else if (filterStatus.value === 'expiring') {
@@ -571,8 +527,8 @@ const filteredPhones = computed(() => {
       const nextMonth = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
       result = result.filter(phone => {
         // Check both package expiry and SIM expiry
-        const packageExpiry = phone.packageExpiryDate ? new Date(phone.packageExpiryDate) : null
-        const simExpiry = phone.simExpiryDate ? new Date(phone.simExpiryDate) : null
+        const packageExpiry = phone.promotion_end_date ? new Date(phone.promotion_end_date) : null
+        const simExpiry = phone.sim_expiry_date ? new Date(phone.sim_expiry_date) : null
 
         const packageExpiring = packageExpiry && packageExpiry <= nextMonth && packageExpiry >= today
         const simExpiring = simExpiry && simExpiry <= nextMonth && simExpiry >= today
@@ -588,9 +544,9 @@ const filteredPhones = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(phone =>
-      phone.number.toLowerCase().includes(query) ||
-      phone.network.toLowerCase().includes(query) ||
-      (phone.package && phone.package.toLowerCase().includes(query))
+      phone.phone_number.toLowerCase().includes(query) ||
+      phone.carrier.toLowerCase().includes(query) ||
+      (phone.promotion && phone.promotion.toLowerCase().includes(query))
     )
   }
 
