@@ -413,7 +413,7 @@ const importData = (event) => {
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const importedData = JSON.parse(e.target.result)
 
