@@ -27,6 +27,7 @@
                 v-model="newPhone.phone_number"
                 type="text"
                 placeholder="081-234-5678"
+                maxlength="20"
                 required
               />
             </div>
@@ -242,6 +243,7 @@
                 v-model="editingPhone.phone_number"
                 type="text"
                 placeholder="081-234-5678"
+                maxlength="20"
                 required
               />
             </div>
@@ -440,8 +442,22 @@ const importData = (event) => {
 const handleAddPhone = async () => {
   console.log('📝 Form data:', newPhone.value)
 
+  // Enhanced validation
   if (!newPhone.value.phone_number || !newPhone.value.carrier || !newPhone.value.sim_expiry_date) {
-    alert('กรุณากรอกข้อมูลที่จำเป็น')
+    alert('กรุณากรอกข้อมูลที่จำเป็น (เบอร์โทรศัพท์, ค่ายเครือข่าย, วันหมดอายุซิม)')
+    return
+  }
+
+  // Validate phone number length
+  if (newPhone.value.phone_number.length > 20) {
+    alert('เบอร์โทรศัพท์ยาวเกินไป (ไม่เกิน 20 ตัวอักษร)')
+    return
+  }
+
+  // Basic phone number format validation
+  const phoneRegex = /^[0-9\-\+\(\)\s]+$/
+  if (!phoneRegex.test(newPhone.value.phone_number)) {
+    alert('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ใช้ได้เฉพาะตัวเลข เครื่องหมาย - + ( ) และช่องว่างเท่านั้น)')
     return
   }
 
@@ -478,8 +494,22 @@ const editPhone = (phone) => {
 }
 
 const handleUpdatePhone = async () => {
+  // Enhanced validation for edit
   if (!editingPhone.value.phone_number || !editingPhone.value.carrier || !editingPhone.value.sim_expiry_date) {
-    alert('กรุณากรอกข้อมูลที่จำเป็น')
+    alert('กรุณากรอกข้อมูลที่จำเป็น (เบอร์โทรศัพท์, ค่ายเครือข่าย, วันหมดอายุซิม)')
+    return
+  }
+
+  // Validate phone number length
+  if (editingPhone.value.phone_number.length > 20) {
+    alert('เบอร์โทรศัพท์ยาวเกินไป (ไม่เกิน 20 ตัวอักษร)')
+    return
+  }
+
+  // Basic phone number format validation
+  const phoneRegex = /^[0-9\-\+\(\)\s]+$/
+  if (!phoneRegex.test(editingPhone.value.phone_number)) {
+    alert('รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง (ใช้ได้เฉพาะตัวเลข เครื่องหมาย - + ( ) และช่องว่างเท่านั้น)')
     return
   }
 

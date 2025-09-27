@@ -187,8 +187,24 @@ export const usePhones = () => {
       return data[0]
     } catch (err) {
       console.error('❌ Failed to add phone:', err)
-      error.value = `เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ${err.message}`
-      throw err
+
+      // Handle specific error types
+      let userMessage = 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล'
+
+      if (err.code === '22001') {
+        userMessage = 'เบอร์โทรศัพท์ยาวเกินไป (ไม่เกิน 20 ตัวอักษร)'
+      } else if (err.code === '23505') {
+        userMessage = 'เบอร์โทรศัพท์นี้มีในระบบแล้ว'
+      } else if (err.code === '23502') {
+        userMessage = 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน'
+      } else if (err.message.includes('fetch')) {
+        userMessage = 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้'
+      } else {
+        userMessage = `${userMessage}: ${err.message}`
+      }
+
+      error.value = userMessage
+      throw new Error(userMessage)
     } finally {
       loading.value = false
     }
@@ -238,8 +254,24 @@ export const usePhones = () => {
       return data[0]
     } catch (err) {
       console.error('❌ Failed to update phone:', err)
-      error.value = `เกิดข้อผิดพลาดในการแก้ไขข้อมูล: ${err.message}`
-      throw err
+
+      // Handle specific error types
+      let userMessage = 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล'
+
+      if (err.code === '22001') {
+        userMessage = 'เบอร์โทรศัพท์ยาวเกินไป (ไม่เกิน 20 ตัวอักษร)'
+      } else if (err.code === '23505') {
+        userMessage = 'เบอร์โทรศัพท์นี้มีในระบบแล้ว'
+      } else if (err.code === '23502') {
+        userMessage = 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน'
+      } else if (err.message.includes('fetch')) {
+        userMessage = 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้'
+      } else {
+        userMessage = `${userMessage}: ${err.message}`
+      }
+
+      error.value = userMessage
+      throw new Error(userMessage)
     } finally {
       loading.value = false
     }
