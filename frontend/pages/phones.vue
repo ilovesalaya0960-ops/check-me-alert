@@ -329,8 +329,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 
+// Debug log to check if composable is available
+console.log('🔧 Initializing phones.vue page...')
+
 // Use Supabase for data management
 const { phones, loading, error, fetchPhones, addPhone, updatePhone, deletePhone, searchPhones } = usePhones()
+
+console.log('🔧 usePhones composable loaded:', {
+  phones: phones?.value?.length || 0,
+  loading: loading?.value,
+  error: error?.value
+})
 
 const newPhone = ref({
   phone_number: '',
@@ -423,7 +432,9 @@ const importData = (event) => {
             id: phone.id || Date.now() + Math.random()
           }))
 
-          savePhones()
+          // ไม่ต้อง savePhones() เพราะใช้ Supabase แล้ว
+          // ให้ refresh ข้อมูลแทน
+          await fetchPhones()
           alert('นำเข้าข้อมูลเรียบร้อยแล้ว!')
 
           // Reset file input
@@ -440,7 +451,9 @@ const importData = (event) => {
 }
 
 const handleAddPhone = async () => {
+  console.log('📝 Form submission started...')
   console.log('📝 Form data:', newPhone.value)
+  console.log('📝 usePhones available?', typeof addPhone)
 
   // Enhanced validation
   if (!newPhone.value.phone_number || !newPhone.value.carrier || !newPhone.value.sim_expiry_date) {
@@ -462,6 +475,13 @@ const handleAddPhone = async () => {
   }
 
   console.log('✅ Form validation passed')
+
+  // Check if addPhone function exists
+  if (typeof addPhone !== 'function') {
+    console.error('❌ addPhone function not available')
+    alert('ระบบยังไม่พร้อม กรุณาลองใหม่อีกครั้ง')
+    return
+  }
 
   try {
     console.log('🔄 Calling addPhone...')
@@ -494,6 +514,8 @@ const editPhone = (phone) => {
 }
 
 const handleUpdatePhone = async () => {
+  console.log('🔄 Update phone started...', editingPhone.value)
+
   // Enhanced validation for edit
   if (!editingPhone.value.phone_number || !editingPhone.value.carrier || !editingPhone.value.sim_expiry_date) {
     alert('กรุณากรอกข้อมูลที่จำเป็น (เบอร์โทรศัพท์, ค่ายเครือข่าย, วันหมดอายุซิม)')
@@ -513,12 +535,23 @@ const handleUpdatePhone = async () => {
     return
   }
 
+  // Check if updatePhone function exists
+  if (typeof updatePhone !== 'function') {
+    console.error('❌ updatePhone function not available')
+    alert('ระบบยังไม่พร้อม กรุณาลองใหม่อีกครั้ง')
+    return
+  }
+
   try {
+    console.log('🔄 Calling updatePhone...')
     await updatePhone(editingPhone.value.id, editingPhone.value)
+    console.log('✅ Update successful')
+
     isEditModalOpen.value = false
     editingPhone.value = null
     alert('อัพเดทข้อมูลสำเร็จ!')
   } catch (err) {
+    console.error('❌ Update error:', err)
     alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถอัปเดตเบอร์ได้'))
   }
 }
@@ -529,11 +562,23 @@ const cancelEdit = () => {
 }
 
 const handleDeletePhone = async (id) => {
+  console.log('🗑️ Delete phone started...', id)
+
   if (confirm('คุณต้องการลบเบอร์นี้หรือไม่?')) {
+    // Check if deletePhone function exists
+    if (typeof deletePhone !== 'function') {
+      console.error('❌ deletePhone function not available')
+      alert('ระบบยังไม่พร้อม กรุณาลองใหม่อีกครั้ง')
+      return
+    }
+
     try {
+      console.log('🔄 Calling deletePhone...')
       await deletePhone(id)
+      console.log('✅ Delete successful')
       alert('ลบเบอร์สำเร็จ!')
     } catch (err) {
+      console.error('❌ Delete error:', err)
       alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถลบเบอร์ได้'))
     }
   }
