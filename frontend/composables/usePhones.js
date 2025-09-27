@@ -74,39 +74,43 @@ export const usePhones = () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // Check if Supabase is available - แต่ให้พยายามใช้ Supabase ก่อน
-  if (!$supabase) {
-    console.warn('⚠️ Supabase not available, using mock data as fallback')
-    console.warn('🔧 This should not happen in production!')
+  // สร้าง Supabase client ใหม่หากไม่มี
+  let supabaseClient = $supabase
 
-    // Return mock functions ที่ใช้ localStorage แทน
-    return {
-      phones: readonly(phones),
-      loading: readonly(loading),
-      error: readonly(error),
-      fetchPhones: async () => {
-        loading.value = true
-        try {
-          // ใช้ mock data
+  if (!supabaseClient) {
+    console.warn('⚠️ Creating new Supabase client directly')
+    try {
+      // Import Supabase และสร้าง client ใหม่
+      const { createClient } = require('@supabase/supabase-js')
+      supabaseClient = createClient(
+        'https://shglsckgjpfjqbvythzz.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoZ2xzY2tnanBmanFidnl0aHp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3ODQ4NzcsImV4cCI6MjA3NDM2MDg3N30.lRh2BCMvL68KCmNp4ZvXutIWFtGsYpLv8rcjlEhDWsQ'
+      )
+      console.log('✅ Created Supabase client directly')
+    } catch (importError) {
+      console.error('❌ Failed to create Supabase client:', importError)
+
+      // ถ้าไม่สามารถสร้าง client ได้ ให้ใช้ mock data
+      phones.value = getMockData()
+      return {
+        phones: readonly(phones),
+        loading: readonly(loading),
+        error: readonly(error),
+        fetchPhones: async () => {
           phones.value = getMockData()
-          console.log('✅ Loaded mock data:', phones.value.length, 'phones')
-        } catch (err) {
-          error.value = 'Failed to load mock data'
-        } finally {
-          loading.value = false
-        }
-      },
-      addPhone: () => Promise.resolve(null),
-      updatePhone: () => Promise.resolve(null),
-      deletePhone: () => Promise.resolve(),
-      searchPhones: () => Promise.resolve([]),
-      convertDbToFrontend: (data) => data,
-      getCalculatedExpiryDate: () => null
+          console.log('✅ Using mock data fallback:', phones.value.length, 'phones')
+        },
+        addPhone: () => Promise.resolve(null),
+        updatePhone: () => Promise.resolve(null),
+        deletePhone: () => Promise.resolve(),
+        searchPhones: () => Promise.resolve([]),
+        getCalculatedExpiryDate: () => null
+      }
     }
   }
 
-  // Supabase is available - ใช้งานจริง
-  console.log('✅ Supabase is available, using real database')
+  // Supabase client พร้อมใช้งาน
+  console.log('✅ Supabase client ready, using real database')
 
   // ดึงข้อมูลเบอร์ทั้งหมด
   const fetchPhones = async () => {
@@ -116,7 +120,7 @@ export const usePhones = () => {
     try {
       console.log('🔄 Attempting to connect to Supabase...')
 
-      const { data, error: fetchError } = await $supabase
+      const { data, error: fetchError } = await supabaseClient
         .from('phone_numbers')
         .select('*')
         .order('created_at', { ascending: false })
@@ -181,7 +185,7 @@ export const usePhones = () => {
 
       console.log('🚀 Clean data for Supabase:', cleanData)
 
-      const { data, error: insertError } = await $supabase
+      const { data, error: insertError } = await supabaseClient
         .from('phone_numbers')
         .insert([cleanData])
         .select()
@@ -245,7 +249,7 @@ export const usePhones = () => {
 
       console.log('🔄 Clean update data for Supabase:', cleanUpdates)
 
-      const { data, error: updateError } = await $supabase
+      const { data, error: updateError } = await supabaseClient
         .from('phone_numbers')
         .update(cleanUpdates)
         .eq('id', id)
@@ -297,7 +301,7 @@ export const usePhones = () => {
     try {
       console.log('🗑️ Deleting phone:', id)
 
-      const { error: deleteError } = await $supabase
+      const { error: deleteError } = await supabaseClient
         .from('phone_numbers')
         .delete()
         .eq('id', id)
@@ -326,7 +330,7 @@ export const usePhones = () => {
     error.value = null
 
     try {
-      const { data, error: searchError } = await $supabase
+      const { data, error: searchError } = await supabaseClient
         .from('phone_numbers')
         .select('*')
         .or(`phone_number.ilike.%${query}%,carrier.ilike.%${query}%`)
