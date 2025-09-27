@@ -74,9 +74,10 @@ export const usePhones = () => {
   const loading = ref(false)
   const error = ref(null)
 
-  // Check if Supabase is available
+  // Check if Supabase is available - แต่ให้พยายามใช้ Supabase ก่อน
   if (!$supabase) {
-    console.warn('Supabase not available, using mock data')
+    console.warn('⚠️ Supabase not available, using mock data as fallback')
+    console.warn('🔧 This should not happen in production!')
 
     // Return mock functions ที่ใช้ localStorage แทน
     return {
@@ -104,6 +105,9 @@ export const usePhones = () => {
     }
   }
 
+  // Supabase is available - ใช้งานจริง
+  console.log('✅ Supabase is available, using real database')
+
   // ดึงข้อมูลเบอร์ทั้งหมด
   const fetchPhones = async () => {
     loading.value = true
@@ -124,23 +128,31 @@ export const usePhones = () => {
 
       console.log('📄 Raw Supabase data:', data)
 
+      // ไม่ต้องแปลง field names แล้ว เพราะใช้ field names เดียวกัน
+      phones.value = data || []
+      console.log('✅ Successfully loaded from Supabase:', phones.value.length, 'phones')
+
       if (data && data.length > 0) {
-        // ไม่ต้องแปลง field names แล้ว เพราะใช้ field names เดียวกัน
-        phones.value = data
-        console.log('✅ Successfully loaded from Supabase:', phones.value.length, 'phones')
+        console.log('📄 First record:', data[0])
         error.value = null
       } else {
-        console.warn('⚠️ Supabase returned empty data, using mock data')
-        phones.value = getMockData()
-        error.value = 'ไม่มีข้อมูลใน database - ใช้ข้อมูลตัวอย่าง'
+        console.log('📄 No data in database - this is normal for a new setup')
+        error.value = null // ไม่ใช่ error ถ้าไม่มีข้อมูล
       }
     } catch (err) {
-      console.warn('❌ Supabase connection failed:', err.message)
-      console.log('🔄 Falling back to mock data...')
+      console.error('❌ Supabase connection failed:', err.message)
+      console.error('📋 Full error:', err)
 
-      // Fallback to mock data เมื่อ Supabase ล้มเหลว
-      phones.value = getMockData()
-      error.value = `ใช้ข้อมูลตัวอย่าง - ${err.message}`
+      // ไม่ fallback ไป mock data แล้ว - ให้แสดง error จริงๆ
+      phones.value = []
+      error.value = `เชื่อมต่อฐานข้อมูลไม่ได้: ${err.message}`
+
+      // แต่ถ้าเป็น development ให้ใช้ mock data
+      if (process.dev) {
+        console.log('🔄 Development mode: falling back to mock data')
+        phones.value = getMockData()
+        error.value = `Development mode - using mock data: ${err.message}`
+      }
     } finally {
       loading.value = false
     }
